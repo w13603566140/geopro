@@ -55,7 +55,6 @@ export default function MonitoringPage() {
   };
 
   return (
-    <>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">AI排名监测</h1>
@@ -212,7 +211,6 @@ export default function MonitoringPage() {
           </div>
         </div>
       )}
-    </div>
 
       {/* AI引用详情弹窗 */}
       {selectedQuote && (
@@ -259,6 +257,5 @@ export default function MonitoringPage() {
         </div>
       )}
     </div>
-    </>
   );
 }
