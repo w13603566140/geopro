@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Globe, FileSearch, Tags, FileText,
   BarChart3, Users, CreditCard, Settings, LogOut, ScrollText, TrendingUp,
   ChevronLeft, Menu, Sparkles, Shield, Zap,
-  Send, Compass, Briefcase, Package, ChevronDown, Wallet,
+  Send, Compass, Briefcase, Package, ChevronDown, Wallet, GitBranch,
 } from 'lucide-react';
 
 // 二级导航分组结构
@@ -49,6 +49,7 @@ const navGroups: NavGroup[] = [
       { href: '/dashboard/monitoring', label: '排名监测', icon: BarChart3 },
       { href: '/dashboard/datacenter', label: 'AI数据中心', icon: TrendingUp },
       { href: '/dashboard/competitors', label: '竞品分析', icon: Users },
+      { href: '/dashboard/traffic-clone', label: 'AI流量复刻', icon: GitBranch },
       { href: '/dashboard/mcp', label: 'Agent/MCP', icon: Zap },
     ],
   },

@@ -24,6 +24,8 @@ import templatesRouter from './routes/templates';
 import onboardingRouter from './routes/onboarding';
 import adminAuthRouter from './routes/admin-auth';
 import creditsRouter from './routes/credits';
+import adminCreditsRouter from './routes/admin-credits';
+import trafficCloneRouter from './routes/traffic-clone';
 import { startScheduler } from './services/scheduler';
 import { errorHandler } from './middleware/error-handler';
 import { authenticate } from './middleware/auth';
@@ -83,6 +85,8 @@ app.use('/api/managed', authenticate, managedRouter);
 app.use('/api/templates', authenticate, templatesRouter);
 app.use('/api/onboarding', authenticate, onboardingRouter);
 app.use('/api/credits', authenticate, creditsRouter);
+app.use('/api/admin/credits', adminCreditsRouter);
+app.use('/api/traffic-clone', authenticate, trafficCloneRouter);
 
 // 启动定时任务
 startScheduler();

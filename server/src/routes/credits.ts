@@ -13,8 +13,8 @@ const creditPackages = [
   { id: 5, name: '企业包', credits: 10000, price: 700, originalPrice: 1500, bonus: 2500 },
 ];
 
-// 积分消耗配置（不同功能的消耗量）
-const creditCosts = {
+// 积分消耗配置（不同功能的消耗量）- 默认值，实际使用时从数据库读取
+const DEFAULT_CREDIT_COSTS = {
   'GEO诊断': 10,
   'AI内容生成': 5,
   '竞品分析': 8,
@@ -22,7 +22,36 @@ const creditCosts = {
   '结构化标签生成': 2,
   '一键发布': 15,
   '行业模板': 20,
+  'AI流量复刻': 25,
 };
+
+/**
+ * 从数据库获取积分消耗配置
+ */
+async function getCreditCostsFromDB(): Promise<Record<string, number>> {
+  try {
+    const config = await prisma.systemConfig.findUnique({
+      where: { key: 'credit_costs' }
+    });
+
+    if (!config) {
+      return DEFAULT_CREDIT_COSTS;
+    }
+
+    const configData = JSON.parse(config.value as string);
+    
+    // 将配置数组转换为对象格式
+    const costs: Record<string, number> = {};
+    configData.forEach((item: any) => {
+      costs[item.label] = item.credits;
+    });
+
+    return costs;
+  } catch (error) {
+    console.error('获取积分配置失败，使用默认值:', error);
+    return DEFAULT_CREDIT_COSTS;
+  }
+}
 
 /**
  * 获取用户积分余额
@@ -123,8 +152,11 @@ router.post('/consume', async (req: any, res) => {
     const userId = req.userId;
     const { type, site, credits: customCredits } = req.body;
 
+    // 从数据库获取积分消耗配置
+    const creditCosts = await getCreditCostsFromDB();
+    
     // 获取消耗量（如果自定义则使用自定义值，否则使用配置值）
-    const credits = customCredits || creditCosts[type as keyof typeof creditCosts];
+    const credits = customCredits || creditCosts[type];
     
     if (!credits) {
       return res.status(400).json({ success: false, error: '无效的功能类型' });
@@ -220,6 +252,7 @@ router.get('/history', async (req: any, res) => {
  */
 router.get('/costs', async (req, res) => {
   try {
+    const creditCosts = await getCreditCostsFromDB();
     res.json({ 
       success: true, 
       data: creditCosts 
