@@ -19,10 +19,13 @@ interface TrafficKeyword {
 interface CompetitorAnalysis {
   url: string;
   domain: string;
+  pageTitle?: string;
+  metaDescription?: string;
   totalKeywords: number;
   totalTraffic: number;
   topKeywords: TrafficKeyword[];
   contentGaps: string[];
+  headings?: { h1: string[]; h2: string[]; h3Count: number };
 }
 
 export default function TrafficClonePage() {
@@ -222,8 +225,65 @@ export default function TrafficClonePage() {
             </div>
           </div>
 
+          {/* 页面信息卡片 */}
+          {analysis.pageTitle && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3 flex items-center gap-2">
+                <FileText className="w-4 h-4" /> 竞品页面信息
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <span className="text-xs text-gray-400">页面标题</span>
+                  <p className="text-sm text-gray-800 mt-0.5">{analysis.pageTitle}</p>
+                </div>
+                {analysis.metaDescription && (
+                  <div>
+                    <span className="text-xs text-gray-400">Meta 描述</span>
+                    <p className="text-sm text-gray-600 mt-0.5">{analysis.metaDescription}</p>
+                  </div>
+                )}
+                {analysis.headings && analysis.headings.h1.length > 0 && (
+                  <div>
+                    <span className="text-xs text-gray-400">H1 标题 ({analysis.headings.h1.length}个)</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {analysis.headings.h1.map((h, i) => (
+                        <span key={i} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{h}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {analysis.headings && analysis.headings.h2.length > 0 && (
+                  <div>
+                    <span className="text-xs text-gray-400">H2 副标题 ({analysis.headings.h2.length}个)</span>
+                    <div className="flex flex-wrap gap-1 mt-1 max-h-20 overflow-y-auto">
+                      {analysis.headings.h2.map((h, i) => (
+                        <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{h}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 内容缺口 */}
+          {analysis.contentGaps.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-orange-500" /> 内容缺口与优化建议 ({analysis.contentGaps.length}条)
+              </h3>
+              <div className="space-y-2">
+                {analysis.contentGaps.map((gap, i) => (
+                  <div key={i} className="flex items-start gap-2 text-sm">
+                    <span className="text-orange-500 mt-0.5">⚠</span>
+                    <span className="text-gray-700">{gap}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Keywords Table */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
                 <div>
