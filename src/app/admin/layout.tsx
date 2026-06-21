@@ -9,7 +9,7 @@ import {
   Receipt, ScrollText, Shield, LogOut, Menu, ChevronLeft,
   Send, Briefcase, Package, Compass, Server, TrendingUp,
   AlertTriangle, Activity, Home, FileText, ChevronDown,
-  Globe, Zap, BarChart3, Wallet,
+  Globe, Zap, BarChart3, Wallet, Percent,
 } from 'lucide-react';
 
 // 二级导航分组结构
@@ -46,7 +46,8 @@ const adminNavGroups: NavGroup[] = [
     icon: Users,
     children: [
       { href: '/admin/users', label: '用户管理', icon: Users },
-      { href: '/admin/credits/config', label: '积分配置', icon: Wallet },
+      { href: '/admin/credits/rate', label: '积分比例', icon: Percent },
+      { href: '/admin/credits/config', label: '消耗配置', icon: Wallet },
       { href: '/admin/payment', label: '支付配置', icon: CreditCard },
       { href: '/admin/plans', label: '套餐管理', icon: Receipt },
     ],
