@@ -14,6 +14,7 @@ export default function MonitoringPage() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<MonitoringResultData[]>([]);
   const [dashboard, setDashboard] = useState<MonitoringDashboard | null>(null);
+  const [selectedQuote, setSelectedQuote] = useState<MonitoringResultData | null>(null);
 
   const handleCheck = async () => {
     if (!question) return;
@@ -54,6 +55,7 @@ export default function MonitoringPage() {
   };
 
   return (
+    <>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">AI排名监测</h1>
@@ -154,10 +156,12 @@ export default function MonitoringPage() {
                   </div>
                   <p className="text-xs text-gray-500 line-clamp-2">{result.responseSnippet}</p>
                   {result.referredPage && (
-                    <a href={result.referredPage} target="_blank" rel="noopener"
-                      className="text-xs text-primary-600 flex items-center gap-1 mt-1">
+                    <button
+                      onClick={() => setSelectedQuote(result)}
+                      className="text-xs text-primary-600 flex items-center gap-1 mt-1 hover:underline cursor-pointer"
+                    >
                       <ExternalLink className="w-3 h-3" /> AI引用页面
-                    </a>
+                    </button>
                   )}
                 </div>
                 <div className="text-right text-xs text-gray-400">
@@ -209,5 +213,52 @@ export default function MonitoringPage() {
         </div>
       )}
     </div>
+
+      {/* AI引用详情弹窗 */}
+      {selectedQuote && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedQuote(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <span className="text-2xl">{getEngineIcon(selectedQuote.aiEngine)}</span>
+                {AI_ENGINE_CONFIG[selectedQuote.aiEngine]?.name} · AI引用详情
+              </h3>
+              <button onClick={() => setSelectedQuote(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <span className="text-xs text-gray-400 uppercase">查询问句</span>
+                <p className="text-sm text-gray-800 mt-1">{selectedQuote.question}</p>
+              </div>
+              <div>
+                <span className="text-xs text-gray-400 uppercase">品牌排名</span>
+                <div className="mt-1">{getRankBadge(selectedQuote.rank)}</div>
+              </div>
+              <div>
+                <span className="text-xs text-gray-400 uppercase">AI 回答片段</span>
+                <div className="mt-2 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <p className="text-sm text-gray-700 leading-relaxed">{selectedQuote.responseSnippet}</p>
+                </div>
+              </div>
+              {selectedQuote.competitors.length > 0 && (
+                <div>
+                  <span className="text-xs text-gray-400 uppercase">同框竞品</span>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {selectedQuote.competitors.map((c, i) => (
+                      <span key={i} className="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full border border-orange-200">{c}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div>
+                <span className="text-xs text-gray-400 uppercase">监测时间</span>
+                <p className="text-sm text-gray-600 mt-1">{new Date(selectedQuote.checkedAt).toLocaleString('zh-CN')}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+    </>
   );
 }

@@ -42,7 +42,7 @@ export async function checkRanking(
     isFirstPlace: rank === 1,
     brandMentioned: rank !== null,
     responseSnippet: generateSimulatedSnippet(aiEngine, brandName, productName, rank),
-    referredPage: rank ? `https://example.com/${rank === 1 ? 'product' : 'tutorial'}/` : '',
+    referredPage: rank ? `/dashboard/monitoring/ai-quote?engine=${aiEngine}&query=${encodeURIComponent(question)}` : '',
     competitors: competitors.filter(c => c !== brandName),
     checkedAt: new Date().toISOString(),
   };
