@@ -8,26 +8,68 @@ import {
   LayoutDashboard, Globe, FileSearch, Tags, FileText,
   BarChart3, Users, CreditCard, Settings, LogOut, ScrollText, TrendingUp,
   ChevronLeft, Menu, Sparkles, Shield, Zap,
-  Send, Compass, Briefcase, Package,
+  Send, Compass, Briefcase, Package, ChevronDown,
 } from 'lucide-react';
 
-const navItems = [
-  { href: '/dashboard', label: '控制台概览', icon: LayoutDashboard },
-  { href: '/dashboard/sites', label: '站点管理', icon: Globe },
-  { href: '/dashboard/audit', label: 'GEO体检', icon: FileSearch },
-  { href: '/dashboard/structured-data', label: '结构化标签', icon: Tags },
-  { href: '/dashboard/content', label: '内容生产', icon: FileText },
-  { href: '/dashboard/publish', label: '一键发布', icon: Send },
-  { href: '/dashboard/monitoring', label: '排名监测', icon: BarChart3 },
-  { href: '/dashboard/datacenter', label: 'AI数据中心', icon: TrendingUp },
-  { href: '/dashboard/competitors', label: '竞品分析', icon: Users },
-  { href: '/dashboard/mcp', label: 'Agent/MCP', icon: Zap },
-  { href: '/dashboard/templates', label: '行业模板', icon: Package },
-  { href: '/dashboard/managed', label: '代运营', icon: Briefcase },
-  { href: '/dashboard/billing', label: '套餐计费', icon: CreditCard },
-  { href: '/dashboard/consumption', label: '消耗明细', icon: ScrollText },
-  { href: '/dashboard/quanyi', label: '账号权益', icon: Shield },
-  { href: '/dashboard/settings', label: '系统设置', icon: Settings },
+// 二级导航分组结构
+interface NavChild {
+  href: string;
+  label: string;
+  icon: any;
+}
+interface NavGroup {
+  title: string;
+  icon: any;
+  children: NavChild[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    title: '控制台',
+    icon: LayoutDashboard,
+    children: [
+      { href: '/dashboard', label: '概览首页', icon: LayoutDashboard },
+    ],
+  },
+  {
+    title: 'GEO优化',
+    icon: FileSearch,
+    children: [
+      { href: '/dashboard/sites', label: '站点管理', icon: Globe },
+      { href: '/dashboard/audit', label: 'GEO体检', icon: FileSearch },
+      { href: '/dashboard/structured-data', label: '结构化标签', icon: Tags },
+      { href: '/dashboard/content', label: '内容生产', icon: FileText },
+      { href: '/dashboard/publish', label: '一键发布', icon: Send },
+    ],
+  },
+  {
+    title: '数据洞察',
+    icon: TrendingUp,
+    children: [
+      { href: '/dashboard/monitoring', label: '排名监测', icon: BarChart3 },
+      { href: '/dashboard/datacenter', label: 'AI数据中心', icon: TrendingUp },
+      { href: '/dashboard/competitors', label: '竞品分析', icon: Users },
+      { href: '/dashboard/mcp', label: 'Agent/MCP', icon: Zap },
+    ],
+  },
+  {
+    title: '增值服务',
+    icon: Briefcase,
+    children: [
+      { href: '/dashboard/templates', label: '行业模板', icon: Package },
+      { href: '/dashboard/managed', label: '代运营', icon: Briefcase },
+    ],
+  },
+  {
+    title: '财务与账号',
+    icon: CreditCard,
+    children: [
+      { href: '/dashboard/billing', label: '套餐计费', icon: CreditCard },
+      { href: '/dashboard/consumption', label: '消耗明细', icon: ScrollText },
+      { href: '/dashboard/quanyi', label: '账号权益', icon: Shield },
+      { href: '/dashboard/settings', label: '系统设置', icon: Settings },
+    ],
+  },
 ];
 
 const planNames: Record<string, string> = { FREE: '免费版', PROFESSIONAL: '专业版', ENTERPRISE: '企业版' };
@@ -42,6 +84,23 @@ export default function DashboardLayoutClient({
   const { user, loading, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // 分组展开状态：默认包含当前路径所在分组
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(() => {
+    // 根据当前路径自动展开对应分组
+    return navGroups
+      .filter(g => g.children.some(c => typeof window !== 'undefined' && window.location.pathname === c.href))
+      .map(g => g.title);
+  });
+
+  const toggleGroup = (title: string) => {
+    setExpandedGroups(prev =>
+      prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]
+    );
+  };
+
+  // 判断分组是否含当前激活项
+  const isGroupActive = (group: NavGroup) =>
+    group.children.some(c => pathname === c.href);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -85,29 +144,81 @@ export default function DashboardLayoutClient({
           )}
         </div>
 
-        {/* 导航菜单 */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {navItems.map(item => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
+        {/* 导航菜单 - 分组二级导航 */}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-2">
+          {navGroups.map(group => {
+            const isExpanded = expandedGroups.includes(group.title);
+            const groupActive = isGroupActive(group);
+            const GroupIcon = group.icon;
+
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
-                  ${isActive
-                    ? 'bg-gradient-to-r from-primary-500/20 to-violet-500/20 text-white shadow-lg border border-primary-500/20'
-                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
-                  }`}
-                title={collapsed ? item.label : undefined}
-              >
-                <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-primary-400' : ''}`} />
-                {!collapsed && item.label}
-                {isActive && !collapsed && (
-                  <div className="ml-auto w-1.5 h-1.5 bg-primary-400 rounded-full" />
+              <div key={group.title}>
+                {/* 分组标题（可点击展开/收起） */}
+                <button
+                  onClick={() => !collapsed && toggleGroup(group.title)}
+                  className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200
+                    ${groupActive
+                      ? 'text-white'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    }
+                    ${collapsed ? 'justify-center' : ''}`}
+                  title={collapsed ? group.title : undefined}
+                >
+                  <GroupIcon className={`w-5 h-5 flex-shrink-0 ${groupActive ? 'text-primary-400' : ''}`} />
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1 text-left">{group.title}</span>
+                      <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                    </>
+                  )}
+                </button>
+
+                {/* 二级菜单项 */}
+                {!collapsed && isExpanded && (
+                  <div className="mt-1 ml-3 pl-4 border-l border-slate-700/50 space-y-0.5">
+                    {group.children.map(child => {
+                      const isActive = pathname === child.href;
+                      const Icon = child.icon;
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-200
+                            ${isActive
+                              ? 'bg-gradient-to-r from-primary-500/20 to-violet-500/20 text-white font-medium border border-primary-500/20'
+                              : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+                            }`}
+                        >
+                          <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-primary-400' : ''}`} />
+                          <span className="flex-1">{child.label}</span>
+                          {isActive && <div className="w-1 h-1 bg-primary-400 rounded-full" />}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 )}
-              </Link>
+
+                {/* 折叠模式下：仅显示激活的二级项 */}
+                {collapsed && groupActive && (
+                  <div className="mt-1 space-y-0.5 px-1">
+                    {group.children.filter(c => pathname === c.href).map(child => {
+                      const Icon = child.icon;
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={() => setMobileOpen(false)}
+                          className="flex items-center justify-center w-full p-2 rounded-lg bg-gradient-to-r from-primary-500/20 to-violet-500/20 text-primary-400 border border-primary-500/20"
+                          title={child.label}
+                        >
+                          <Icon className="w-4 h-4" />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
