@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/lib/auth-context';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { register } = useAuth();
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirmPassword: '', company: '',
   });
@@ -24,21 +26,13 @@ export default function RegisterPage() {
     }
 
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name,
-          email: form.email,
-          password: form.password,
-          company: form.company,
-        }),
+      await register({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        company: form.company,
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '注册失败');
-
-      router.push('/login?registered=true');
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
     } finally {

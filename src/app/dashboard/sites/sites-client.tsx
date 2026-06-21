@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, ExternalLink, CheckCircle, XCircle, Clock, RefreshCw, Trash2, Search } from 'lucide-react';
+import { sitesApi } from '@/lib/api-client';
 
 interface SiteData {
   id: string;
@@ -18,15 +19,25 @@ interface SiteData {
   updatedAt: string;
 }
 
-export default function SitesClient({ initialSites }: { initialSites: SiteData[] }) {
+export default function SitesClient() {
   const router = useRouter();
-  const [sites, setSites] = useState<SiteData[]>(initialSites);
+  const [sites, setSites] = useState<SiteData[]>([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     name: '', url: '', type: 'OFFICIAL_WEBSITE', brandName: '',
     productName: '', mainService: '', industry: '', targetCustomer: '',
   });
+
+  // 加载站点
+  useEffect(() => { loadData(); }, []);
+  const loadData = async () => {
+    try {
+      const res = await sitesApi.list();
+      if (res.success && res.data) setSites(res.data as SiteData[]);
+    } catch { /* keep demo data */ }
+    setLoading(false);
+  };
 
   const siteTypes: Record<string, string> = {
     OFFICIAL_WEBSITE: '官方网站',
@@ -42,14 +53,10 @@ export default function SitesClient({ initialSites }: { initialSites: SiteData[]
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/api/sites', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) throw new Error('添加失败');
-      const newSite = await res.json();
-      setSites([newSite.data, ...sites]);
+      const res = await sitesApi.create(form);
+      if (res.success && res.data) {
+        setSites([res.data as SiteData, ...sites]);
+      }
       setShowAdd(false);
       setForm({ name: '', url: '', type: 'OFFICIAL_WEBSITE', brandName: '', productName: '', mainService: '', industry: '', targetCustomer: '' });
     } catch (err) {
@@ -61,7 +68,7 @@ export default function SitesClient({ initialSites }: { initialSites: SiteData[]
 
   const handleDelete = async (id: string) => {
     if (!confirm('确定删除此站点？相关数据将一并删除。')) return;
-    await fetch(`/api/sites/${id}`, { method: 'DELETE' });
+    await sitesApi.delete(id);
     setSites(sites.filter(s => s.id !== id));
   };
 

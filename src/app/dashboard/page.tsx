@@ -1,5 +1,10 @@
-// 演示模式：使用模拟数据，无需数据库
-export default async function DashboardPage() {
+'use client';
+
+import { useAuth } from '@/lib/auth-context';
+
+export default function DashboardPage() {
+  const { user } = useAuth();
+
   // 模拟统计数据
   const stats = [
     { label: '管理站点', value: 3, icon: '🌐', change: '+1' },
@@ -18,7 +23,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">控制台概览</h1>
-        <p className="text-gray-500 mt-1">欢迎回来，演示用户 · 专业版</p>
+        <p className="text-gray-500 mt-1">欢迎回来，{user?.name || '用户'} · {user?.planTier === 'ENTERPRISE' ? '企业版' : user?.planTier === 'PROFESSIONAL' ? '专业版' : '免费版'}</p>
       </div>
 
       {/* 统计卡片 */}

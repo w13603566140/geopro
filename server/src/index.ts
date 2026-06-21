@@ -15,6 +15,7 @@ import { contentRouter } from './routes/content';
 import { mcpRouter } from './routes/mcp';
 import { billingRouter } from './routes/billing';
 import { settingsRouter } from './routes/settings';
+import { adminRouter } from './routes/admin';
 import { errorHandler } from './middleware/error-handler';
 import { authenticate } from './middleware/auth';
 
@@ -64,6 +65,7 @@ app.use('/api/content', authenticate, contentRouter);
 app.use('/api/mcp', authenticate, mcpRouter);
 app.use('/api/billing', authenticate, billingRouter);
 app.use('/api/settings', authenticate, settingsRouter);
+app.use('/api/admin', authenticate, adminRouter);
 
 // ========== 错误处理 ==========
 

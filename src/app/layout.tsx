@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { ClientProviders } from './client-providers';
 
 export const metadata: Metadata = {
   title: 'GEO优化助手Pro - AI搜索引擎优化SaaS平台',
@@ -15,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className="min-h-screen">
-        {children}
+        <ClientProviders>{children}</ClientProviders>
       </body>
     </html>
   );

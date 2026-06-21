@@ -4,6 +4,8 @@ import prisma from '../config/database';
 import { generateToken, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/error-handler';
 
+const DEMO_MODE = process.env.DEMO_MODE === 'true';
+
 export const authRouter = Router();
 
 /**
@@ -83,6 +85,17 @@ authRouter.post('/login', async (req: AuthRequest, res: Response) => {
 
     if (!email || !password) {
       throw new AppError('请输入邮箱和密码', 400);
+    }
+
+    // 演示模式：任意账号密码均可登录
+    if (DEMO_MODE) {
+      const demoUser = {
+        id: 'demo-user-001', email, name: email.split('@')[0],
+        role: 'ADMIN', planTier: 'PROFESSIONAL', credits: 286,
+        company: '示例科技有限公司',
+      };
+      const token = generateToken({ userId: demoUser.id, role: demoUser.role, planTier: demoUser.planTier });
+      return res.json({ success: true, data: { token, user: demoUser } });
     }
 
     const user = await prisma.user.findUnique({ where: { email } });

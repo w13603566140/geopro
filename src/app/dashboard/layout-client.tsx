@@ -1,14 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { Session } from 'next-auth';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { useAuth } from '@/lib/auth-context';
 import {
   LayoutDashboard, Globe, FileSearch, Tags, FileText,
   BarChart3, Users, CreditCard, Settings, LogOut,
-  ChevronLeft, Menu, Sparkles, Shield, Zap,
+  ChevronLeft, Menu, Sparkles, Shield, Zap, Cog,
 } from 'lucide-react';
 
 const navItems = [
@@ -22,21 +21,33 @@ const navItems = [
   { href: '/dashboard/mcp', label: 'Agent/MCP', icon: Zap },
   { href: '/dashboard/billing', label: '套餐计费', icon: CreditCard },
   { href: '/dashboard/settings', label: '系统设置', icon: Settings },
+  { href: '/dashboard/admin', label: '管理后台', icon: Cog, adminOnly: true },
 ];
 
+const planNames: Record<string, string> = { FREE: '免费版', PROFESSIONAL: '专业版', ENTERPRISE: '企业版' };
+
 export default function DashboardLayoutClient({
-  session,
   children,
 }: {
-  session: Session;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, loading, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const user = session.user as any;
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return <div className="flex h-screen items-center justify-center bg-gray-50"><div className="text-center"><div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4" /><p className="text-gray-500">加载中...</p></div></div>;
+  }
+
+  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -104,7 +115,7 @@ export default function DashboardLayoutClient({
             </div>
           )}
           <button
-            onClick={() => signOut({ callbackUrl: '/' })}
+            onClick={() => { logout(); router.push('/'); }}
             className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors"
           >
             <LogOut className="w-5 h-5" />
@@ -131,10 +142,10 @@ export default function DashboardLayoutClient({
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">{user?.email}</span>
+            <span className="text-sm text-gray-600">{user.email}</span>
             <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
               <span className="text-primary-700 font-medium text-sm">
-                {(user?.name || user?.email || 'U')[0].toUpperCase()}
+                {(user.name || user.email || 'U')[0].toUpperCase()}
               </span>
             </div>
           </div>

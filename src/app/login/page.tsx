@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,18 +18,13 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    const result = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-    });
-
-    if (result?.error) {
-      setError(result.error);
-      setLoading(false);
-    } else {
+    try {
+      await login(email, password);
       router.push('/dashboard');
-      router.refresh();
+    } catch (err: any) {
+      setError(err.message || '登录失败');
+    } finally {
+      setLoading(false);
     }
   };
 
