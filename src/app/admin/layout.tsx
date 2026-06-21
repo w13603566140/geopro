@@ -8,21 +8,58 @@ import {
   LayoutDashboard, Settings, Users, CreditCard,
   Receipt, ScrollText, Shield, LogOut, Menu, ChevronLeft,
   Send, Briefcase, Package, Compass, Server, TrendingUp,
-  AlertTriangle, Activity, Home, FileText,
+  AlertTriangle, Activity, Home, FileText, ChevronDown,
+  Globe, Zap, BarChart3,
 } from 'lucide-react';
 
-const adminNavItems = [
-  { href: '/admin', label: '管理概览', icon: LayoutDashboard },
-  { href: '/admin/system', label: '系统配置', icon: Settings },
-  { href: '/admin/users', label: '用户管理', icon: Users },
-  { href: '/admin/payment', label: '支付配置', icon: CreditCard },
-  { href: '/admin/plans', label: '套餐管理', icon: Receipt },
-  { href: '/admin/publish', label: '发布管理', icon: Send },
-  { href: '/admin/templates', label: '模板管理', icon: Package },
-  { href: '/admin/managed', label: '代运营管理', icon: Briefcase },
-  { href: '/admin/onboarding', label: '引导配置', icon: Compass },
-  { href: '/admin/legal', label: '法律文档', icon: FileText },
-  { href: '/admin/logs', label: '操作日志', icon: ScrollText },
+// 二级导航分组结构
+interface NavChild {
+  href: string;
+  label: string;
+  icon: any;
+}
+interface NavGroup {
+  title: string;
+  icon: any;
+  children: NavChild[];
+}
+
+const adminNavGroups: NavGroup[] = [
+  {
+    title: '总览',
+    icon: LayoutDashboard,
+    children: [
+      { href: '/admin', label: '管理概览', icon: LayoutDashboard },
+    ],
+  },
+  {
+    title: '运营管理',
+    icon: Globe,
+    children: [
+      { href: '/admin/publish', label: '发布管理', icon: Send },
+      { href: '/admin/managed', label: '代运营管理', icon: Briefcase },
+      { href: '/admin/templates', label: '模板管理', icon: Package },
+    ],
+  },
+  {
+    title: '用户与财务',
+    icon: Users,
+    children: [
+      { href: '/admin/users', label: '用户管理', icon: Users },
+      { href: '/admin/payment', label: '支付配置', icon: CreditCard },
+      { href: '/admin/plans', label: '套餐管理', icon: Receipt },
+    ],
+  },
+  {
+    title: '系统配置',
+    icon: Settings,
+    children: [
+      { href: '/admin/system', label: '系统配置', icon: Settings },
+      { href: '/admin/onboarding', label: '引导配置', icon: Compass },
+      { href: '/admin/legal', label: '法律文档', icon: FileText },
+      { href: '/admin/logs', label: '操作日志', icon: ScrollText },
+    ],
+  },
 ];
 
 function AdminLayoutInner({ children }: { children: React.ReactNode }) {
@@ -31,6 +68,21 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const { adminUser, loading, adminLogout, isAdmin } = useAdminAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // 分组展开状态
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(() => {
+    return adminNavGroups
+      .filter(g => g.children.some(c => typeof window !== 'undefined' && window.location.pathname.startsWith(c.href)))
+      .map(g => g.title);
+  });
+
+  const toggleGroup = (title: string) => {
+    setExpandedGroups(prev =>
+      prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]
+    );
+  };
+
+  const isGroupActive = (group: NavGroup) =>
+    group.children.some(c => pathname === c.href || (c.href !== '/admin' && pathname.startsWith(c.href)));
 
   // 排除登录页
   const isLoginPage = pathname === '/admin/login';
@@ -89,28 +141,77 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* 导航 */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {adminNavItems.map(item => {
-            const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
-            const Icon = item.icon;
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-2">
+          {adminNavGroups.map(group => {
+            const isExpanded = expandedGroups.includes(group.title);
+            const groupActive = isGroupActive(group);
+            const GroupIcon = group.icon;
+
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
-                  ${isActive
-                    ? 'bg-amber-600/20 text-amber-400'
-                    : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
-                  }`}
-                title={collapsed ? item.label : undefined}
-              >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                {!collapsed && item.label}
-                {isActive && !collapsed && (
-                  <div className="ml-auto w-1.5 h-1.5 bg-amber-500 rounded-full" />
+              <div key={group.title}>
+                {/* 分组标题 */}
+                <button
+                  onClick={() => !collapsed && toggleGroup(group.title)}
+                  className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200
+                    ${groupActive ? 'text-amber-400' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}
+                    ${collapsed ? 'justify-center' : ''}`}
+                  title={collapsed ? group.title : undefined}
+                >
+                  <GroupIcon className={`w-5 h-5 flex-shrink-0 ${groupActive ? 'text-amber-400' : ''}`} />
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1 text-left">{group.title}</span>
+                      <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                    </>
+                  )}
+                </button>
+
+                {/* 二级菜单 */}
+                {!collapsed && isExpanded && (
+                  <div className="mt-1 ml-3 pl-4 border-l border-slate-700/50 space-y-0.5">
+                    {group.children.map(child => {
+                      const isActive = pathname === child.href || (child.href !== '/admin' && pathname.startsWith(child.href));
+                      const Icon = child.icon;
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-200
+                            ${isActive
+                              ? 'bg-amber-600/20 text-amber-400 font-medium border border-amber-500/20'
+                              : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
+                            }`}
+                        >
+                          <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-amber-400' : ''}`} />
+                          <span className="flex-1">{child.label}</span>
+                          {isActive && <div className="w-1 h-1 bg-amber-400 rounded-full" />}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 )}
-              </Link>
+
+                {/* 折叠模式 */}
+                {collapsed && groupActive && (
+                  <div className="mt-1 space-y-0.5 px-1">
+                    {group.children.filter(c => pathname === c.href || (c.href !== '/admin' && pathname.startsWith(c.href))).map(child => {
+                      const Icon = child.icon;
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={() => setMobileOpen(false)}
+                          className="flex items-center justify-center w-full p-2 rounded-lg bg-amber-600/20 text-amber-400 border border-amber-500/20"
+                          title={child.label}
+                        >
+                          <Icon className="w-4 h-4" />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
