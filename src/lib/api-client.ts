@@ -172,7 +172,21 @@ export const settingsApi = {
     request<any>('/settings/password', { method: 'PUT', body: JSON.stringify({ currentPassword, newPassword }) }),
 };
 
-// ========== 管理后台 API ==========
+// ========== AI诊断 API ==========
+
+export const diagnosisApi = {
+  getModels: () => request<any[]>('/diagnosis/models'),
+  runDiagnosis: (brandName: string, industryWords: string[], siteUrl: string, platforms: string[]) =>
+    request<any>('/diagnosis/run', {
+      method: 'POST',
+      body: JSON.stringify({ brandName, industryWords, siteUrl, platforms }),
+    }),
+  quickQuery: (modelKey: string, question: string, brandName: string) =>
+    request<any>('/diagnosis/quick-query', {
+      method: 'POST',
+      body: JSON.stringify({ modelKey, question, brandName }),
+    }),
+};
 
 export const adminApi = {
   getSystemConfig: () => request<any>('/admin/system-config'),

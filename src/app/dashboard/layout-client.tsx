@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import {
   LayoutDashboard, Globe, FileSearch, Tags, FileText,
-  BarChart3, Users, CreditCard, Settings, LogOut,
+  BarChart3, Users, CreditCard, Settings, LogOut, ScrollText,
   ChevronLeft, Menu, Sparkles, Shield, Zap, Cog,
 } from 'lucide-react';
 
@@ -20,6 +20,8 @@ const navItems = [
   { href: '/dashboard/competitors', label: '竞品分析', icon: Users },
   { href: '/dashboard/mcp', label: 'Agent/MCP', icon: Zap },
   { href: '/dashboard/billing', label: '套餐计费', icon: CreditCard },
+  { href: '/dashboard/consumption', label: '消耗明细', icon: ScrollText },
+  { href: '/dashboard/quanyi', label: '账号权益', icon: Shield },
   { href: '/dashboard/settings', label: '系统设置', icon: Settings },
   { href: '/dashboard/admin', label: '管理后台', icon: Cog, adminOnly: true },
 ];
@@ -140,7 +142,15 @@ export default function DashboardLayoutClient({
             onClick={() => setMobileOpen(true)}>
             <Menu className="w-5 h-5 text-gray-600" />
           </button>
-          <div className="flex-1" />
+          <div className="flex-1 flex items-center gap-4 ml-4">
+            {/* 会员信息条 */}
+            <div className="hidden md:flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-3 py-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span className="text-xs text-amber-700">
+                有效期至 2027-12-31 · {planNames[user.planTier] || '免费版'}
+              </span>
+            </div>
+          </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{user.email}</span>
             <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">

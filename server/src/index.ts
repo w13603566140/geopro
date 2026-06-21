@@ -16,6 +16,7 @@ import { mcpRouter } from './routes/mcp';
 import { billingRouter } from './routes/billing';
 import { settingsRouter } from './routes/settings';
 import { adminRouter } from './routes/admin';
+import { diagnosisRouter } from './routes/diagnosis';
 import { errorHandler } from './middleware/error-handler';
 import { authenticate } from './middleware/auth';
 
@@ -66,6 +67,7 @@ app.use('/api/mcp', authenticate, mcpRouter);
 app.use('/api/billing', authenticate, billingRouter);
 app.use('/api/settings', authenticate, settingsRouter);
 app.use('/api/admin', authenticate, adminRouter);
+app.use('/api/diagnosis', authenticate, diagnosisRouter);
 
 // ========== 错误处理 ==========
 

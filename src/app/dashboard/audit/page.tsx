@@ -1,254 +1,122 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Search, AlertTriangle, CheckCircle, AlertCircle, Info, Download, RefreshCw, FileCode, ChevronDown, ChevronUp } from 'lucide-react';
-import { AuditReportData, AuditDefect, DefectSeverity } from '@/types';
-import { runFullAudit } from '@/lib/geo/audit-engine';
+import { useState } from 'react';
+import { Search, CheckCircle, AlertCircle, Download, RefreshCw, ChevronDown, ChevronUp, Zap, Target } from 'lucide-react';
+import { diagnosisApi } from '@/lib/api-client';
+
+interface DiagnosisReport {
+  id: string; brandName: string; industryWords: string[];
+  siteUrl: string; platforms: string[];
+  results: { modelKey: string; modelName: string; modelIcon: string; visible: boolean; rank: number | null; responseSnippet: string; confidence: number; topCompetitors: string[]; suggestions: string[]; }[];
+  summary: { totalPlatforms: number; visiblePlatforms: number; firstPlacePlatforms: number; averageRank: number; visibilityRate: number; overallScore: number; };
+  optimizationPlan: { urgentActions: any[]; shortTermActions: any[]; longTermActions: any[]; };
+}
 
 export default function AuditPage() {
-  const searchParams = useSearchParams();
   const [siteUrl, setSiteUrl] = useState('');
+  const [brandName, setBrandName] = useState('');
+  const [industryWords, setIndustryWords] = useState('');
   const [loading, setLoading] = useState(false);
-  const [report, setReport] = useState<AuditReportData | null>(null);
+  const [report, setReport] = useState<DiagnosisReport | null>(null);
   const [error, setError] = useState('');
-  const [expandedDefects, setExpandedDefects] = useState<Set<string>>(new Set());
+  const [expandedSection, setExpandedSection] = useState('');
 
-  const preselectedSiteId = searchParams.get('siteId');
+  const aiPlatforms = [
+    { key: 'deepseek', name: 'DeepSeek', icon: '🔍', checked: true },
+    { key: 'doubao', name: '豆包', icon: '🫘', checked: true },
+    { key: 'yuanbao', name: '元宝', icon: '💎', checked: true },
+    { key: 'tongyi', name: '通义千问', icon: '☁️', checked: true },
+    { key: 'wenxin', name: '文心一言', icon: '📝', checked: true },
+    { key: 'kimi', name: 'Kimi', icon: '🌙', checked: true },
+    { key: 'nano', name: '纳米AI', icon: '🤖', checked: false },
+    { key: 'zhipu', name: '智谱清言', icon: '🧠', checked: false },
+  ];
+  const [platforms, setPlatforms] = useState(aiPlatforms);
 
-  const runAudit = async () => {
-    if (!siteUrl) return;
-    setLoading(true);
-    setError('');
+  const runDiagnosis = async () => {
+    if (!brandName || !industryWords) return;
+    setLoading(true); setError('');
     try {
-      // 演示模式：使用本地引擎模拟爬取
-      await new Promise(r => setTimeout(r, 1500));
-      const baseUrl = siteUrl.replace(/\/$/, '');
-      const pages = [
-        { url: baseUrl, title: '首页', content: '产品官网首页内容...', statusCode: 200, headers: {}, hasCanonical: true, hasJsonLd: true, hasFaq: false, hasTutorial: false, hasComparison: false, hasCodeExamples: false, loadTime: 800 },
-        { url: `${baseUrl}/products`, title: '产品中心', content: '产品介绍...', statusCode: 200, headers: {}, hasCanonical: true, hasJsonLd: true, hasFaq: false, hasTutorial: false, hasComparison: true, hasCodeExamples: false, loadTime: 1200 },
-        { url: `${baseUrl}/docs`, title: '文档中心', content: '技术文档...', statusCode: 200, headers: {}, hasCanonical: false, hasJsonLd: false, hasFaq: false, hasTutorial: true, hasComparison: false, hasCodeExamples: true, loadTime: 900 },
-        { url: `${baseUrl}/docs/getting-started`, title: '快速开始', content: '快速上手指南...', statusCode: 200, headers: {}, hasCanonical: true, hasJsonLd: false, hasFaq: false, hasTutorial: true, hasComparison: false, hasCodeExamples: true, loadTime: 1500 },
-        { url: `${baseUrl}/faq`, title: '常见问题', content: 'FAQ内容...', statusCode: 200, headers: {}, hasCanonical: true, hasJsonLd: false, hasFaq: true, hasTutorial: false, hasComparison: false, hasCodeExamples: false, loadTime: 600 },
-        { url: `${baseUrl}/pricing`, title: '定价方案', content: '价格对比...', statusCode: 200, headers: {}, hasCanonical: true, hasJsonLd: false, hasFaq: false, hasTutorial: false, hasComparison: true, hasCodeExamples: false, loadTime: 1100 },
-        { url: `${baseUrl}/blog`, title: '技术博客', content: '博客文章...', statusCode: 200, headers: {}, hasCanonical: true, hasJsonLd: false, hasFaq: false, hasTutorial: false, hasComparison: false, hasCodeExamples: false, loadTime: 700 },
-        { url: `${baseUrl}/about`, title: '关于我们', content: '品牌介绍...', statusCode: 200, headers: {}, hasCanonical: true, hasJsonLd: false, hasFaq: false, hasTutorial: false, hasComparison: false, hasCodeExamples: false, loadTime: 500 },
-      ];
-      const result = await runFullAudit(siteUrl, pages);
-      setReport(result);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+      const sel = platforms.filter(p => p.checked).map(p => p.key);
+      const words = industryWords.split(/[,，]/).map(w => w.trim()).filter(Boolean);
+      const res = await diagnosisApi.runDiagnosis(brandName, words, siteUrl, sel);
+      if (res.success && res.data) setReport(res.data as DiagnosisReport);
+    } catch (err: any) { setError(err.message); }
+    finally { setLoading(false); }
   };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getScoreBg = (score: number) => {
-    if (score >= 80) return 'bg-green-50 border-green-200';
-    if (score >= 60) return 'bg-yellow-50 border-yellow-200';
-    return 'bg-red-50 border-red-200';
-  };
-
-  const getSeverityIcon = (severity: DefectSeverity) => {
-    switch (severity) {
-      case DefectSeverity.CRITICAL: return <AlertCircle className="w-5 h-5 text-red-500" />;
-      case DefectSeverity.HIGH: return <AlertTriangle className="w-5 h-5 text-orange-500" />;
-      case DefectSeverity.MEDIUM: return <Info className="w-5 h-5 text-yellow-500" />;
-      case DefectSeverity.LOW: return <Info className="w-5 h-5 text-blue-500" />;
-    }
-  };
-
-  const getSeverityLabel = (severity: DefectSeverity) => {
-    const labels = { CRITICAL: '严重', HIGH: '高', MEDIUM: '中', LOW: '低' };
-    const colors = { CRITICAL: 'badge-danger', HIGH: 'badge-warning', MEDIUM: 'badge-info', LOW: 'bg-gray-100 text-gray-600' };
-    return <span className={colors[severity]}>{labels[severity]}</span>;
-  };
-
-  const toggleDefect = (type: string) => {
-    const newSet = new Set(expandedDefects);
-    if (newSet.has(type)) newSet.delete(type);
-    else newSet.add(type);
-    setExpandedDefects(newSet);
-  };
-
-  // 默认示例URL
-  useEffect(() => {
-    if (!siteUrl && !preselectedSiteId) {
-      setSiteUrl('https://example.com');
-    }
-  }, []);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">GEO体检诊断</h1>
-        <p className="text-gray-500 mt-1">智能扫描12大AI收录扣分缺陷，输出全面优化报告</p>
-      </div>
+      <div><h1 className="text-2xl font-bold text-gray-900">AI可见度诊断</h1><p className="text-gray-500 mt-1">查询8大AI模型中品牌的可见度与推荐排名</p></div>
 
-      {/* 输入URL */}
       <div className="card p-6">
-        <label className="label">输入站点URL进行体检</label>
+        <label className="label">诊断AI大模型平台</label>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {platforms.map(p => (
+            <button key={p.key} onClick={() => setPlatforms(platforms.map(pl => pl.key === p.key ? {...pl, checked: !pl.checked} : pl))}
+              className={"flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border-2 transition-all " +
+                (p.checked ? 'bg-primary-50 border-primary-300 text-primary-700' : 'bg-gray-50 border-gray-200 text-gray-400')}>
+              <span>{p.icon}</span> {p.name}
+            </button>
+          ))}
+        </div>
+        <div className="grid md:grid-cols-2 gap-4 mb-4">
+          <div><label className="label">一、品牌名称 *</label><input type="text" className="input-field" placeholder="如: 小米科技, 小米" value={brandName} onChange={e => setBrandName(e.target.value)} /></div>
+          <div><label className="label">二、行业词 *</label><input type="text" className="input-field" placeholder="如：智能家居，AI诊断软件" value={industryWords} onChange={e => setIndustryWords(e.target.value)} /></div>
+        </div>
+        <label className="label">三、站点URL（选填）</label>
         <div className="flex gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="url"
-              className="input-field !pl-10"
-              placeholder="https://your-site.com"
-              value={siteUrl}
-              onChange={e => setSiteUrl(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && runAudit()}
-            />
-          </div>
-          <button onClick={runAudit} className="btn-primary flex items-center gap-2" disabled={loading || !siteUrl}>
-            {loading ? (
-              <><RefreshCw className="w-4 h-4 animate-spin" /> 扫描中...</>
-            ) : (
-              <><Search className="w-4 h-4" /> 开始体检</>
-            )}
+          <div className="flex-1 relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><input type="url" className="input-field !pl-10" placeholder="https://your-site.com" value={siteUrl} onChange={e => setSiteUrl(e.target.value)} /></div>
+          <button onClick={runDiagnosis} className="btn-primary flex items-center gap-2" disabled={loading || !brandName}>
+            {loading ? <><RefreshCw className="w-4 h-4 animate-spin" /> 诊断中...</> : <><Zap className="w-4 h-4" /> 创建诊断任务（10积分）</>}
           </button>
         </div>
-        <p className="text-xs text-gray-400 mt-2">
-          扫描范围：llms.txt、JSON-LD、robots.txt、FAQ、教程、测评、代码示例等12项指标
-        </p>
       </div>
 
-      {/* 错误信息 */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-600 text-sm">{error}</div>
-      )}
+      {error && <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-600 text-sm">{error}</div>}
 
-      {/* 体检报告 */}
-      {report && (
-        <div className="space-y-6">
-          {/* 总分卡片 */}
-          <div className={`card p-8 border-2 ${getScoreBg(report.totalScore)} text-center`}>
-            <div className={`text-6xl font-extrabold mb-2 ${getScoreColor(report.totalScore)}`}>
-              {report.totalScore}
-            </div>
-            <div className="text-gray-600 font-medium">GEO优化总分 / 100</div>
-            <div className="text-sm text-gray-400 mt-1">
-              扫描 {report.scannedPages} 个页面 · 发现 {report.totalIssues} 个优化项
-            </div>
-          </div>
+      {report && (<ResultsBlock report={report} expandedSection={expandedSection} setExpandedSection={setExpandedSection} />)}
 
-          {/* 各维度得分 */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {[
-              { label: '索引完整度', score: report.indexScore, icon: '📑' },
-              { label: '结构化标签', score: report.structureScore, icon: '🏷️' },
-              { label: '内容质量', score: report.contentScore, icon: '📝' },
-              { label: '权威度', score: report.authorityScore, icon: '⭐' },
-              { label: '技术健康', score: report.technicalScore, icon: '⚙️' },
-            ].map(dim => (
-              <div key={dim.label} className="card p-4 text-center">
-                <div className="text-2xl mb-1">{dim.icon}</div>
-                <div className={`text-xl font-bold ${getScoreColor(dim.score)}`}>{dim.score}</div>
-                <div className="text-xs text-gray-500">{dim.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* 缺陷列表 */}
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold mb-4">优化缺陷清单</h2>
-            <div className="space-y-3">
-              {report.defects.map((defect, i) => (
-                <div key={i} className="border border-gray-200 rounded-lg overflow-hidden">
-                  <div
-                    className="flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50"
-                    onClick={() => toggleDefect(defect.defectType)}
-                  >
-                    {getSeverityIcon(defect.severity)}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{defect.title}</span>
-                        {getSeverityLabel(defect.severity)}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-0.5">扣 {defect.scoreDeduction} 分</div>
-                    </div>
-                    {expandedDefects.has(defect.defectType) ? (
-                      <ChevronUp className="w-4 h-4 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    )}
-                  </div>
-
-                  {expandedDefects.has(defect.defectType) && (
-                    <div className="border-t border-gray-100 bg-gray-50 p-4 space-y-3">
-                      <p className="text-sm text-gray-600">{defect.description}</p>
-
-                      {defect.affectedPages.length > 0 && (
-                        <div>
-                          <div className="text-xs text-gray-500 font-medium mb-1">受影响页面：</div>
-                          <ul className="text-xs text-gray-600 space-y-0.5">
-                            {defect.affectedPages.map((page, j) => (
-                              <li key={j} className="font-mono">{page}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {defect.fixSnippet && (
-                        <div>
-                          <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-1">
-                            <FileCode className="w-3.5 h-3.5" /> 修复代码片段
-                          </div>
-                          <pre className="bg-gray-900 text-green-400 p-3 rounded-lg text-xs overflow-x-auto max-h-48">
-                            <code>{defect.fixSnippet}</code>
-                          </pre>
-                          <button
-                            onClick={() => navigator.clipboard.writeText(defect.fixSnippet)}
-                            className="text-xs text-primary-600 hover:text-primary-700 mt-1"
-                          >
-                            复制代码
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 导出按钮 */}
-          <div className="flex gap-3">
-            <button className="btn-secondary flex items-center gap-2">
-              <Download className="w-4 h-4" /> 导出PDF报告
-            </button>
-            <button className="btn-secondary flex items-center gap-2">
-              <Download className="w-4 h-4" /> 导出缺陷清单CSV
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 空状态提示 */}
       {!report && !loading && (
-        <div className="card p-12 text-center">
-          <div className="text-5xl mb-4">🔍</div>
-          <h3 className="text-lg font-medium text-gray-700 mb-2">开始你的首次GEO体检</h3>
-          <p className="text-gray-500 max-w-md mx-auto">
-            输入你的网站URL，我们将自动扫描12项AI收录关键指标，生成详细优化报告
-          </p>
-          <div className="mt-6 grid grid-cols-3 gap-4 max-w-lg mx-auto text-left">
-            {['检查llms.txt/robots.txt', '验证JSON-LD结构化标签', '评估E-E-A-T权威度',
-              '检测FAQ和教程内容', '分析页面加载性能', '生成修复代码片段'].map(hint => (
-              <div key={hint} className="flex items-start gap-2 text-xs text-gray-500">
-                <CheckCircle className="w-3.5 h-3.5 text-green-400 mt-0.5 flex-shrink-0" />
-                {hint}
-              </div>
-            ))}
-          </div>
-        </div>
+        <div className="card p-12 text-center"><div className="text-6xl mb-4">🤖</div><h3 className="text-lg font-medium text-gray-700 mb-2">AI可见度诊断</h3><p className="text-gray-500">填写品牌和行业词，自动查询8大AI模型的品牌可见度</p></div>
       )}
+    </div>
+  );
+}
+
+function ResultsBlock({ report, expandedSection, setExpandedSection }: any) {
+  return (
+    <div className="space-y-6">
+      <div className={"card p-8 border-2 text-center " + (report.summary.overallScore >= 70 ? 'bg-green-50 border-green-200' : report.summary.overallScore >= 40 ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200')}>
+        <div className={"text-6xl font-extrabold mb-2 " + (report.summary.overallScore >= 70 ? 'text-green-600' : report.summary.overallScore >= 40 ? 'text-yellow-600' : 'text-red-600')}>{report.summary.overallScore}</div>
+        <div className="text-gray-600 font-medium">AI可见度综合评分 / 100</div>
+        <div className="text-sm text-gray-400 mt-1">{report.summary.visiblePlatforms}/{report.summary.totalPlatforms} 平台可见 · {report.summary.firstPlacePlatforms} 个首位</div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[{label:'可见平台',value:`${report.summary.visiblePlatforms}/${report.summary.totalPlatforms}`,icon:'👁️',color:'text-blue-600'},{label:'首位占位',value:report.summary.firstPlacePlatforms,icon:'🥇',color:'text-amber-600'},{label:'可见率',value:`${report.summary.visibilityRate}%`,icon:'📊',color:'text-green-600'},{label:'平均排名',value:report.summary.averageRank||'-',icon:'📈',color:'text-purple-600'}].map(s=>(<div key={s.label} className="card p-4 text-center"><div className="text-2xl mb-1">{s.icon}</div><div className={`text-xl font-bold ${s.color}`}>{s.value}</div><div className="text-xs text-gray-500">{s.label}</div></div>))}
+      </div>
+      <div className="card p-6">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><Target className="w-5 h-5 text-primary-600" /> AI模型可见度详情</h2>
+        <div className="space-y-3">
+          {report.results.map((r:any,i:number)=>(<div key={i} className={'border-2 rounded-xl overflow-hidden '+(r.visible?r.rank===1?'border-green-200 bg-green-50/30':'border-blue-100 bg-blue-50/20':'border-red-100 bg-red-50/20')}>
+            <div className="flex items-center gap-4 p-4">
+              <div className="text-2xl">{r.modelIcon}</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1"><span className="font-semibold text-sm">{r.modelName}</span>{r.visible?(r.rank===1?<span className="badge-success">🥇 首位</span>:r.rank===2?<span className="badge-info">🥈 第2位</span>:<span className="badge-warning">第{r.rank}位</span>):<span className="badge-danger">未收录</span>}<span className="text-xs text-gray-400">可信度{r.confidence}%</span></div>
+                <p className="text-xs text-gray-600 line-clamp-2">{r.responseSnippet}</p>
+                {r.topCompetitors.length>0&&<div className="flex items-center gap-1 mt-1"><span className="text-xs text-gray-400">竞品:</span>{r.topCompetitors.map((c:string,j:number)=><span key={j} className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{c}</span>)}</div>}
+              </div>
+              <button onClick={()=>setExpandedSection(expandedSection===r.modelKey?'':r.modelKey)} className="text-gray-400">{expandedSection===r.modelKey?<ChevronUp className="w-4 h-4"/>:<ChevronDown className="w-4 h-4"/>}</button>
+            </div>
+            {expandedSection===r.modelKey&&(<div className="border-t p-4 bg-white space-y-2"><div className="text-xs font-medium text-gray-500">优化建议：</div>{r.suggestions.map((s:string,j:number)=>(<div key={j} className={'text-xs p-2 rounded-lg '+(s.startsWith('✅')?'bg-green-50 text-green-700':s.startsWith('⚠️')?'bg-yellow-50 text-yellow-700':s.startsWith('🔴')||s.startsWith('🚨')?'bg-red-50 text-red-700':'bg-blue-50 text-blue-700')}>{s}</div>))}</div>)}
+          </div>))}
+        </div>
+      </div>
+      <div className="card p-6">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><Zap className="w-5 h-5 text-yellow-500" /> 品牌优化方案</h2>
+        {[{title:'紧急行动 (1-3天)',color:'red',items:report.optimizationPlan.urgentActions},{title:'短期计划 (1-2周)',color:'amber',items:report.optimizationPlan.shortTermActions},{title:'长期战略 (1-3个月)',color:'blue',items:report.optimizationPlan.longTermActions}].map((s:any)=>(<div key={s.title} className="mb-4 last:mb-0"><h3 className={`text-sm font-medium text-${s.color}-600 mb-3 flex items-center gap-2`}><AlertCircle className="w-4 h-4"/>{s.title}</h3><div className="space-y-2">{s.items.map((a:any,i:number)=>(<div key={i} className={`flex items-start gap-3 p-3 bg-${s.color}-50 border border-${s.color}-100 rounded-lg`}><span className={`text-xs px-2 py-0.5 rounded font-bold ${s.color==='red'?'bg-red-500 text-white':s.color==='amber'?'bg-amber-500 text-white':'bg-blue-500 text-white'}`}>{a.priority==='high'?'高优':a.priority==='medium'?'中优':'低优'}</span><div className="flex-1"><p className={`text-sm text-${s.color}-700`}>{a.action}</p><p className={`text-xs text-${s.color}-400 mt-1`}>预期: {a.estimatedImpact}</p></div></div>))}</div></div>))}
+      </div>
+      <div className="flex gap-3"><button className="btn-secondary flex items-center gap-2"><Download className="w-4 h-4"/>导出诊断报告PDF</button></div>
     </div>
   );
 }
