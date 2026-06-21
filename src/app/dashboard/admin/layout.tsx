@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Settings, Users, CreditCard,
   Receipt, ScrollText, Shield, Server, ArrowLeft, Cog,
+  Send, Briefcase, Package, Compass,
 } from 'lucide-react';
 
 const adminNavItems = [
@@ -14,6 +15,10 @@ const adminNavItems = [
   { href: '/dashboard/admin/users', label: '用户管理', icon: Users },
   { href: '/dashboard/admin/payment', label: '支付配置', icon: CreditCard },
   { href: '/dashboard/admin/plans', label: '套餐管理', icon: Receipt },
+  { href: '/dashboard/admin/publish', label: '发布管理', icon: Send },
+  { href: '/dashboard/admin/templates', label: '模板管理', icon: Package },
+  { href: '/dashboard/admin/managed', label: '代运营管理', icon: Briefcase },
+  { href: '/dashboard/admin/onboarding', label: '引导配置', icon: Compass },
   { href: '/dashboard/admin/logs', label: '操作日志', icon: ScrollText },
 ];
 
