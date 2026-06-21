@@ -3,21 +3,111 @@ import Link from 'next/link';
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* 导航栏 - 玻璃拟态 */}
+      {/* 导航栏 - 玻璃拟态 + 二级菜单 */}
       <header className="nav-glass sticky top-0 z-50 border-b border-slate-200/60">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          {/* Logo */}
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 bg-gradient-to-br from-primary-600 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/30">
               <span className="text-white font-bold text-base">G</span>
             </div>
             <span className="font-bold text-lg text-slate-900 tracking-tight">GEO优化助手Pro</span>
           </div>
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="#features" className="text-sm text-slate-600 hover:text-primary-600 transition-colors font-medium">功能</Link>
-            <Link href="#cases" className="text-sm text-slate-600 hover:text-primary-600 transition-colors font-medium">案例</Link>
-            <Link href="#pricing" className="text-sm text-slate-600 hover:text-primary-600 transition-colors font-medium">套餐</Link>
-            <Link href="#faq" className="text-sm text-slate-600 hover:text-primary-600 transition-colors font-medium">FAQ</Link>
+
+          {/* 一级导航 + 二级下拉 */}
+          <nav className="hidden md:flex items-center gap-1">
+            {/* 产品功能 - 二级菜单 */}
+            <div className="group relative">
+              <button className="flex items-center gap-1 px-4 py-2 text-sm text-slate-600 hover:text-primary-600 transition-colors font-medium rounded-lg hover:bg-slate-50">
+                产品功能
+                <svg className="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              {/* 二级下拉面板 */}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-[480px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pt-2">
+                <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-3 grid grid-cols-2 gap-1">
+                  {[
+                    { icon: '🔍', title: '智能体检诊断', desc: '12大AI收录扣分项扫描', href: '#features', color: 'from-blue-500 to-cyan-500' },
+                    { icon: '🏷️', title: '结构化标签引擎', desc: '8种JSON-LD模板生成', href: '#features', color: 'from-violet-500 to-purple-500' },
+                    { icon: '📝', title: 'AI内容生产', desc: '高权重结构化内容', href: '#features', color: 'from-emerald-500 to-teal-500' },
+                    { icon: '📊', title: '排名监测系统', desc: '10大AI引擎实时追踪', href: '#features', color: 'from-amber-500 to-orange-500' },
+                    { icon: '🕵️', title: '竞品情报分析', desc: '竞品GEO策略扫描', href: '#features', color: 'from-pink-500 to-rose-500' },
+                    { icon: '🤖', title: 'Agent/MCP生态', desc: 'AI智能体协议文件', href: '#features', color: 'from-indigo-500 to-blue-500' },
+                  ].map(item => (
+                    <Link key={item.title} href={item.href} className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group/item">
+                      <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${item.color} flex items-center justify-center text-lg flex-shrink-0 shadow-sm group-hover/item:scale-110 transition-transform`}>
+                        {item.icon}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-slate-900 group-hover/item:text-primary-600 transition-colors">{item.title}</div>
+                        <div className="text-xs text-slate-400 truncate">{item.desc}</div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 解决方案 - 二级菜单 */}
+            <div className="group relative">
+              <button className="flex items-center gap-1 px-4 py-2 text-sm text-slate-600 hover:text-primary-600 transition-colors font-medium rounded-lg hover:bg-slate-50">
+                解决方案
+                <svg className="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-80 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pt-2">
+                <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-3 space-y-1">
+                  {[
+                    { icon: '💻', title: 'SaaS企业服务', desc: 'B2B SaaS产品GEO优化方案' },
+                    { icon: '🛒', title: '电商零售', desc: '商品详情页结构化标记' },
+                    { icon: '🏥', title: '医疗健康', desc: '合规医疗GEO优化方案' },
+                    { icon: '📚', title: '教育培训', desc: '课程与讲师资质标记' },
+                    { icon: '💰', title: '金融保险', desc: '金融合规内容优化' },
+                  ].map(item => (
+                    <Link key={item.title} href="#features" className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+                      <span className="text-2xl">{item.icon}</span>
+                      <div>
+                        <div className="text-sm font-medium text-slate-900">{item.title}</div>
+                        <div className="text-xs text-slate-400">{item.desc}</div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 客户案例 - 直接链接 */}
+            <Link href="#cases" className="px-4 py-2 text-sm text-slate-600 hover:text-primary-600 transition-colors font-medium rounded-lg hover:bg-slate-50">客户案例</Link>
+
+            {/* 价格方案 - 直接链接 */}
+            <Link href="#pricing" className="px-4 py-2 text-sm text-slate-600 hover:text-primary-600 transition-colors font-medium rounded-lg hover:bg-slate-50">价格方案</Link>
+
+            {/* 资源中心 - 二级菜单 */}
+            <div className="group relative">
+              <button className="flex items-center gap-1 px-4 py-2 text-sm text-slate-600 hover:text-primary-600 transition-colors font-medium rounded-lg hover:bg-slate-50">
+                资源中心
+                <svg className="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              <div className="absolute top-full right-0 mt-1 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pt-2">
+                <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-3 space-y-1">
+                  {[
+                    { icon: '📖', title: '使用文档', desc: '产品使用指南' },
+                    { icon: '📜', title: '服务条款', desc: '用户服务协议', href: '/terms' },
+                    { icon: '🔒', title: '隐私政策', desc: '个人信息保护', href: '/privacy' },
+                    { icon: '❓', title: '常见问题', desc: 'FAQ解答' },
+                  ].map(item => (
+                    <Link key={item.title} href={item.href || '#'} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+                      <span className="text-xl">{item.icon}</span>
+                      <div>
+                        <div className="text-sm font-medium text-slate-900">{item.title}</div>
+                        <div className="text-xs text-slate-400">{item.desc}</div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
           </nav>
+
+          {/* 右侧操作按钮 */}
           <div className="flex items-center gap-3">
             <Link href="/login" className="btn-secondary text-sm !px-4 !py-2">登录</Link>
             <Link href="/register" className="btn-primary text-sm !px-4 !py-2">免费注册</Link>
