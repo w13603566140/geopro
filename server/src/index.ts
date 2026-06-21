@@ -18,6 +18,10 @@ import { settingsRouter } from './routes/settings';
 import { adminRouter } from './routes/admin';
 import { diagnosisRouter } from './routes/diagnosis';
 import { paymentRouter } from './routes/payment-callback';
+import publishRouter from './routes/publish';
+import managedRouter from './routes/managed';
+import templatesRouter from './routes/templates';
+import onboardingRouter from './routes/onboarding';
 import { startScheduler } from './services/scheduler';
 import { errorHandler } from './middleware/error-handler';
 import { authenticate } from './middleware/auth';
@@ -71,6 +75,10 @@ app.use('/api/settings', authenticate, settingsRouter);
 app.use('/api/admin', authenticate, adminRouter);
 app.use('/api/diagnosis', authenticate, diagnosisRouter);
 app.use('/api/payment', paymentRouter);  // 支付回调不需要认证
+app.use('/api/publish', authenticate, publishRouter);
+app.use('/api/managed', authenticate, managedRouter);
+app.use('/api/templates', authenticate, templatesRouter);
+app.use('/api/onboarding', authenticate, onboardingRouter);
 
 // 启动定时任务
 startScheduler();

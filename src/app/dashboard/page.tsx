@@ -1,9 +1,27 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import OnboardingWizard from '@/components/onboarding/onboarding-wizard';
+import { Compass } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // 首次登录自动弹出引导
+  useEffect(() => {
+    const hasOnboarded = localStorage.getItem('geo_onboarded');
+    if (!hasOnboarded) {
+      const timer = setTimeout(() => setShowOnboarding(true), 500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('geo_onboarded', 'true');
+    setShowOnboarding(false);
+  };
 
   // 模拟统计数据
   const stats = [
@@ -90,6 +108,30 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+      {/* 新手引导入口 */}
+      <div className="bg-gradient-to-r from-primary-50 to-blue-50 border border-primary-100 rounded-xl p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
+            <Compass className="w-5 h-5 text-primary-600" />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-gray-900">新手引导</div>
+            <div className="text-xs text-gray-500">5分钟完成配置，开启AI优化之旅</div>
+          </div>
+        </div>
+        <button
+          onClick={() => setShowOnboarding(true)}
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+        >
+          开始引导
+        </button>
+      </div>
+
+      <OnboardingWizard
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onComplete={handleOnboardingComplete}
+      />
     </div>
   );
 }

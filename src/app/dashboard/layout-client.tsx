@@ -8,6 +8,7 @@ import {
   LayoutDashboard, Globe, FileSearch, Tags, FileText,
   BarChart3, Users, CreditCard, Settings, LogOut, ScrollText, TrendingUp,
   ChevronLeft, Menu, Sparkles, Shield, Zap, Cog,
+  Send, Compass, Briefcase, Package,
 } from 'lucide-react';
 
 const navItems = [
@@ -16,10 +17,13 @@ const navItems = [
   { href: '/dashboard/audit', label: 'GEO体检', icon: FileSearch },
   { href: '/dashboard/structured-data', label: '结构化标签', icon: Tags },
   { href: '/dashboard/content', label: '内容生产', icon: FileText },
+  { href: '/dashboard/publish', label: '一键发布', icon: Send },
   { href: '/dashboard/monitoring', label: '排名监测', icon: BarChart3 },
   { href: '/dashboard/datacenter', label: 'AI数据中心', icon: TrendingUp },
   { href: '/dashboard/competitors', label: '竞品分析', icon: Users },
   { href: '/dashboard/mcp', label: 'Agent/MCP', icon: Zap },
+  { href: '/dashboard/templates', label: '行业模板', icon: Package },
+  { href: '/dashboard/managed', label: '代运营', icon: Briefcase },
   { href: '/dashboard/billing', label: '套餐计费', icon: CreditCard },
   { href: '/dashboard/consumption', label: '消耗明细', icon: ScrollText },
   { href: '/dashboard/quanyi', label: '账号权益', icon: Shield },
