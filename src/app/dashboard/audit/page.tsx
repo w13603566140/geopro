@@ -3,14 +3,7 @@
 import { useState } from 'react';
 import { Search, CheckCircle, AlertCircle, Download, RefreshCw, ChevronDown, ChevronUp, Zap, Target } from 'lucide-react';
 import { diagnosisApi } from '@/lib/api-client';
-
-interface DiagnosisReport {
-  id: string; brandName: string; industryWords: string[];
-  siteUrl: string; platforms: string[];
-  results: { modelKey: string; modelName: string; modelIcon: string; visible: boolean; rank: number | null; responseSnippet: string; confidence: number; topCompetitors: string[]; suggestions: string[]; }[];
-  summary: { totalPlatforms: number; visiblePlatforms: number; firstPlacePlatforms: number; averageRank: number; visibilityRate: number; overallScore: number; };
-  optimizationPlan: { urgentActions: any[]; shortTermActions: any[]; longTermActions: any[]; };
-}
+import type { DiagnosisReport, AIVisibilityResult, OptimizationAction } from '@/lib/types';
 
 export default function AuditPage() {
   const [siteUrl, setSiteUrl] = useState('');
@@ -41,7 +34,7 @@ export default function AuditPage() {
       const words = industryWords.split(/[,，]/).map(w => w.trim()).filter(Boolean);
       const res = await diagnosisApi.runDiagnosis(brandName, words, siteUrl, sel);
       if (res.success && res.data) setReport(res.data as DiagnosisReport);
-    } catch (err: any) { setError(err.message); }
+    } catch (err) { setError(err instanceof Error ? err.message : '诊断失败'); }
     finally { setLoading(false); }
   };
 
@@ -84,7 +77,13 @@ export default function AuditPage() {
   );
 }
 
-function ResultsBlock({ report, expandedSection, setExpandedSection, brandName, siteUrl }: any) {
+function ResultsBlock({ report, expandedSection, setExpandedSection }: {
+  report: DiagnosisReport;
+  expandedSection: string;
+  setExpandedSection: (s: string) => void;
+  brandName: string;
+  siteUrl: string;
+}) {
   const [selectedActions, setSelectedActions] = useState<Set<string>>(new Set());
   const [executing, setExecuting] = useState(false);
   const [executed, setExecuted] = useState<Set<string>>(new Set());
@@ -96,7 +95,7 @@ function ResultsBlock({ report, expandedSection, setExpandedSection, brandName, 
     { title: '长期战略 (1-3个月)', color: 'blue', items: report.optimizationPlan.longTermActions, prefix: 'long' },
   ];
 
-  const allActions = allSections.flatMap(s => s.items.map((a: any, i: number) => ({
+  const allActions = allSections.flatMap(s => s.items.map((a: OptimizationAction, i: number) => ({
     ...a, id: `${s.prefix}-${i}`, sectionColor: s.color, sectionTitle: s.title
   })));
 
@@ -193,7 +192,7 @@ function ResultsBlock({ report, expandedSection, setExpandedSection, brandName, 
               </div>
 
               <div className="space-y-2">
-                {section.items.map((a: any, i: number) => {
+                {section.items.map((a: OptimizationAction, i: number) => {
                   const id = `${section.prefix}-${i}`;
                   const isSelected = selectedActions.has(id);
                   const isDone = executed.has(id);
