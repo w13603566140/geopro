@@ -1,0 +1,658 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========== 用户与认证 ==========
+
+enum UserRole {
+  SUPER_ADMIN   // 超级管理员
+  ADMIN         // 企业管理员
+  MANAGER       // 团队经理
+  EDITOR        // 内容编辑
+  VIEWER        // 只读查看
+}
+
+enum PlanTier {
+  FREE          // 免费引流版
+  PROFESSIONAL  // 专业订阅版
+  ENTERPRISE    // 企业年费版
+}
+
+model User {
+  id             String        @id @default(cuid())
+  email          String        @unique
+  emailVerified  DateTime?
+  passwordHash   String?
+  name           String?
+  avatar         String?
+  phone          String?
+  company        String?
+  role           UserRole      @default(ADMIN)
+  planTier       PlanTier      @default(FREE)
+  
+  // 积分与额度
+  credits        Int           @default(100)
+  dailyQueryUsed Int           @default(0)
+  dailyQueryDate DateTime?
+  contentQuota   Int           @default(5)   // 每日内容生成额度
+  
+  // 关联
+  accounts           Account[]
+  sessions           Session[]
+  sites              Site[]
+  organizations      OrganizationMember[]
+  subscription       Subscription?
+  orders             Order[]
+  creditTransactions CreditTransaction[]
+  distributor        Distributor?
+  
+  // 审计
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  lastLoginAt    DateTime?
+  isActive       Boolean       @default(true)
+
+  // 分销
+  referrerId     String?
+  referrer       User?         @relation("Referral", fields: [referrerId], references: [id])
+  referrals      User[]        @relation("Referral")
+  commissionRate Decimal?      @default(0)
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ========== 组织与团队 ==========
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  logo        String?
+  planTier    PlanTier @default(FREE)
+  
+  members     OrganizationMember[]
+  sites       Site[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  role           UserRole @default(EDITOR)
+  
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, userId])
+  @@map("organization_members")
+}
+
+// ========== 站点管理 ==========
+
+enum SiteStatus {
+  ACTIVE
+  PENDING_VERIFICATION
+  VERIFICATION_FAILED
+  SUSPENDED
+}
+
+enum SiteType {
+  OFFICIAL_WEBSITE
+  DOCS_SITE
+  OPEN_SOURCE
+  API_GATEWAY
+  DOWNLOAD_SITE
+  BLOG
+  OTHER
+}
+
+enum FrameworkType {
+  VUE_SPA
+  REACT_SPA
+  NEXT_JS
+  WORDPRESS
+  VITEPRESS
+  HEXO
+  STATIC_HTML
+  OTHER
+}
+
+model Site {
+  id              String     @id @default(cuid())
+  userId          String
+  organizationId  String?
+  name            String
+  url             String
+  type            SiteType   @default(OFFICIAL_WEBSITE)
+  framework       FrameworkType @default(OTHER)
+  
+  // 品牌信息
+  brandName       String?
+  productName     String?
+  mainService     String?
+  industry        String?
+  targetCustomer  String?
+  pricingModel    String?
+  
+  // 所有权验证
+  verificationMethod String?  // FILE_UPLOAD / DNS_TXT / HTML_META
+  verificationToken   String?
+  isVerified          Boolean  @default(false)
+  verifiedAt          DateTime?
+  status              SiteStatus @default(PENDING_VERIFICATION)
+  
+  // 分组与标签
+  group         String?
+  tags          String?
+  
+  // GEO总评分
+  geoScore      Int?
+  lastAuditAt   DateTime?
+  
+  // 关联数据
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization  Organization? @relation(fields: [organizationId], references: [id])
+  
+  auditReports        AuditReport[]
+  structuredData      StructuredDataRecord[]
+  contentPages        ContentPage[]
+  monitoringResults   MonitoringResult[]
+  competitorAnalyses  CompetitorAnalysis[]
+  crawlRules          CrawlRule[]
+  monitoringQueries   MonitoringQuery[]
+  agentProfile        AgentProfile?
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("sites")
+}
+
+// ========== GEO体检诊断 ==========
+
+enum DefectType {
+  MISSING_LLMS_TXT
+  MISSING_LLMS_FULL_TXT
+  MISSING_JSON_LD
+  ROBOTS_BLOCK_AI
+  NO_FAQ_CONTENT
+  NO_TUTORIAL
+  NO_COMPARISON
+  NO_CODE_EXAMPLES
+  DUPLICATE_PAGES
+  MISSING_CANONICAL
+  LOAD_BLOCKING
+  NO_BRAND_ENTITY
+}
+
+enum DefectSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model AuditReport {
+  id              String      @id @default(cuid())
+  siteId          String
+  totalScore      Int         // 0-100
+  scannedPages    Int
+  totalIssues     Int
+  
+  // 各维度得分
+  indexScore      Int
+  structureScore  Int
+  contentScore    Int
+  authorityScore  Int
+  technicalScore  Int
+  
+  site            Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  defects         AuditDefect[]
+  
+  createdAt       DateTime    @default(now())
+  
+  @@map("audit_reports")
+}
+
+model AuditDefect {
+  id              String        @id @default(cuid())
+  reportId        String
+  defectType      DefectType
+  severity        DefectSeverity
+  title           String
+  description     String
+  affectedPages   String?       // JSON数组
+  fixSnippet      String?       // 修复代码片段
+  scoreDeduction  Int
+  
+  report          AuditReport   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  
+  @@map("audit_defects")
+}
+
+// ========== AI抓取规则 ==========
+
+model CrawlRule {
+  id              String   @id @default(cuid())
+  siteId          String
+  llmsTxt         String?  // llms.txt 内容
+  llmsFullTxt     String?  // llms-full.txt 内容
+  robotsTxt       String?  // 优化后的 robots.txt
+  sitemap         String?  // 增强型 sitemap XML
+  agentCard       String?  // agent-card.json
+  mcpConfig       String?  // mcp.json
+  
+  site            Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("crawl_rules")
+}
+
+// ========== 结构化标签引擎 ==========
+
+enum StructuredDataType {
+  SOFTWARE_APPLICATION
+  PRODUCT
+  SERVICE
+  FAQ_PAGE
+  HOW_TO
+  ORGANIZATION
+  REVIEW
+  ARTICLE
+}
+
+model StructuredDataTemplate {
+  id              String            @id @default(cuid())
+  name            String
+  type            StructuredDataType
+  description     String?
+  templateJson    String            // JSON-LD 模板
+  isPremium       Boolean           @default(false)
+  industry        String?
+  
+  records         StructuredDataRecord[]
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@map("structured_data_templates")
+}
+
+model StructuredDataRecord {
+  id              String            @id @default(cuid())
+  siteId          String?
+  pageUrl         String
+  type            StructuredDataType
+  jsonLdContent   String            // 生成的JSON-LD
+  templateId      String?
+  validationStatus String?          // VALID / INVALID / WARNING
+  isActive        Boolean           @default(true)
+  
+  site            Site?                   @relation(fields: [siteId], references: [id])
+  template        StructuredDataTemplate? @relation(fields: [templateId], references: [id])
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@map("structured_data_records")
+}
+
+// ========== 内容页面库 ==========
+
+model ContentPage {
+  id              String   @id @default(cuid())
+  siteId          String
+  url             String
+  title           String
+  content         String?  // 提取/生成的内容
+  pageType        String?  // PRODUCT / TUTORIAL / FAQ / BLOG / REVIEW
+  
+  site            Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("content_pages")
+}
+
+// ========== AI意图挖掘 ==========
+
+enum IntentType {
+  SELECTION_RECOMMEND  // 选型推荐
+  DEPLOY_TUTORIAL      // 部署教程
+  ERROR_FIX            // 报错解决
+  PRICE_COMPARE        // 价格对比
+  CHANNEL_RECOMMEND    // 渠道推荐
+  PROS_CONS            // 优缺点咨询
+}
+
+model UserIntent {
+  id              String     @id @default(cuid())
+  question        String     // AI用户原生长句提问
+  intentType      IntentType
+  source          String     // kimi / doubao / gpt / gemini / perplexity
+  keywords        String?    // 关键词JSON数组
+  industry        String?
+  isHighValue     Boolean    @default(false)
+  competitorMention String?  // 提及的竞品
+  
+  generatedContents GeneratedContent[]
+  
+  createdAt       DateTime   @default(now())
+
+  @@map("user_intents")
+}
+
+// ========== AI内容生成 ==========
+
+enum ContentLanguage {
+  ZH_CN
+  EN_US
+  BILINGUAL
+}
+
+model GeneratedContent {
+  id              String         @id @default(cuid())
+  intentId        String?
+  title           String
+  content         String
+  contentType     String         // TUTORIAL / REVIEW / COMPARISON / FAQ / BLOG
+  language        ContentLanguage @default(ZH_CN)
+  structure       String?        // 内容结构化元数据JSON
+  eeatScore       Int?           // E-E-A-T权威评分
+  isCompliant     Boolean        @default(true)
+  wordCount       Int
+  
+  intent          UserIntent?    @relation(fields: [intentId], references: [id])
+  
+  createdAt       DateTime       @default(now())
+
+  @@map("generated_contents")
+}
+
+// ========== AI引擎排名监测 ==========
+
+enum AIEngine {
+  DOUBAO
+  KIMI
+  WENXIN
+  DEEPSEEK
+  BYTEDANCE_AI
+  GPT_SEARCH
+  GEMINI
+  PERPLEXITY
+  CLAUDE_SEARCH
+  MISTRAL
+}
+
+model MonitoringQuery {
+  id              String             @id @default(cuid())
+  siteId          String
+  question        String             // 监测问句
+  aiEngine        AIEngine
+  status          String             @default("ACTIVE")
+  schedule        String?            // 定时cron表达式
+  
+  site            Site               @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  results         MonitoringResult[]
+  
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@map("monitoring_queries")
+}
+
+model MonitoringResult {
+  id              String             @id @default(cuid())
+  queryId         String
+  siteId          String
+  aiEngine        AIEngine
+  question        String
+  rank            Int?               // 1=首位, 2=次位, null=无展示
+  isFirstPlace    Boolean            @default(false)
+  brandMentioned  Boolean            @default(false)
+  responseSnippet String?
+  referredPage    String?            // AI引用页面URL
+  competitors     String?            // 同框竞品JSON
+  rawResponse     String?            // 原始AI回答
+  
+  query           MonitoringQuery    @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  site            Site               @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime           @default(now())
+
+  @@map("monitoring_results")
+}
+
+// ========== 竞品分析 ==========
+
+model CompetitorAnalysis {
+  id              String   @id @default(cuid())
+  siteId          String
+  competitorUrl   String
+  competitorName  String
+  
+  // 扫描结果
+  llmsTxtContent  String?
+  structuredDataSummary String?  // JSON
+  highRankQuestions    String?   // JSON数组
+  contentGaps          String?   // JSON：你缺失的内容类型
+  exposureTrend        String?   // JSON趋势数据
+  catchUpPlan          String?   // 赶超优化清单JSON
+  
+  site            Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("competitor_analyses")
+}
+
+// ========== MCP/Agent生态 ==========
+
+model AgentProfile {
+  id              String   @id @default(cuid())
+  siteId          String   @unique
+  agentCard       String   // agent-card.json 内容
+  mcpConfig       String   // mcp.json 内容
+  serviceDescription String // AI可读的服务能力描述
+  pluginDoc       String?  // AI插件可读产品参数
+  
+  site            Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("agent_profiles")
+}
+
+// ========== 计费与订阅 ==========
+
+model Subscription {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  planTier        PlanTier
+  status          String    @default("ACTIVE") // ACTIVE / CANCELLED / EXPIRED
+  startDate       DateTime  @default(now())
+  endDate         DateTime?
+  autoRenew       Boolean   @default(true)
+  paymentMethod   String?
+  
+  // 套餐限额
+  maxSites        Int       @default(1)
+  maxDailyQueries Int       @default(3)
+  maxContentDaily Int       @default(5)
+  
+  user            User      @relation(fields: [userId], references: [id])
+  orders          Order[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("subscriptions")
+}
+
+model Order {
+  id              String       @id @default(cuid())
+  userId          String
+  subscriptionId  String?
+  amount          Decimal
+  currency        String       @default("CNY")
+  status          String       @default("PENDING") // PENDING / PAID / REFUNDED / CANCELLED
+  paymentMethod   String
+  transactionId   String?
+  
+  user            User         @relation(fields: [userId], references: [id])
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id])
+  invoice         Invoice?
+  
+  createdAt       DateTime     @default(now())
+  paidAt          DateTime?
+
+  @@map("orders")
+}
+
+model Invoice {
+  id              String   @id @default(cuid())
+  orderId         String   @unique
+  invoiceNumber   String   @unique
+  amount          Decimal
+  taxAmount       Decimal?
+  pdfUrl          String?
+  
+  order           Order    @relation(fields: [orderId], references: [id])
+  
+  createdAt       DateTime @default(now())
+
+  @@map("invoices")
+}
+
+model CreditTransaction {
+  id              String   @id @default(cuid())
+  userId          String
+  amount          Int      // 正数=充值，负数=消费
+  balance         Int      // 交易后余额
+  description     String
+  type            String   // CHARGE / CONSUME / REFUND
+  
+  user            User     @relation(fields: [userId], references: [id])
+  
+  createdAt       DateTime @default(now())
+
+  @@map("credit_transactions")
+}
+
+// ========== 分销代理 ==========
+
+model Distributor {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  commissionRate  Decimal  @default(0.1)
+  totalEarnings   Decimal  @default(0)
+  isActive        Boolean  @default(true)
+  
+  user            User     @relation(fields: [userId], references: [id])
+  subAccounts     DistributorSubAccount[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("distributors")
+}
+
+model DistributorSubAccount {
+  id              String       @id @default(cuid())
+  distributorId   String
+  subUserId       String
+  commissionRate  Decimal      @default(0.05)
+  totalSales      Decimal      @default(0)
+  
+  distributor     Distributor  @relation(fields: [distributorId], references: [id])
+  
+  createdAt       DateTime     @default(now())
+
+  @@map("distributor_sub_accounts")
+}
+
+// ========== 合规日志 ==========
+
+model ComplianceLog {
+  id              String   @id @default(cuid())
+  userId          String?
+  actionType      String   // CONTENT_GENERATE / SITE_SCAN / API_CALL
+  content         String?
+  riskLevel       String?  // SAFE / LOW / MEDIUM / HIGH / BLOCKED
+  riskReason      String?
+  ipAddress       String?
+  
+  createdAt       DateTime @default(now())
+
+  @@map("compliance_logs")
+}
+
+model AuditLog {
+  id              String   @id @default(cuid())
+  userId          String?
+  organizationId  String?
+  action          String
+  resource        String?
+  resourceId      String?
+  details         String?
+  ipAddress       String?
+  
+  createdAt       DateTime @default(now())
+
+  @@map("audit_logs")
+}
