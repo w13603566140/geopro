@@ -27,7 +27,49 @@ const config: Config = {
         danger: { 500: '#ef4444', 600: '#dc2626' },
       },
       fontFamily: {
-        sans: ['PingFang SC', 'Microsoft YaHei', 'sans-serif'],
+      fontFamily: {
+        sans: ['Inter', 'PingFang SC', 'Microsoft YaHei', 'sans-serif'],
+        display: ['Inter', 'PingFang SC', 'Microsoft YaHei', 'sans-serif'],
+      },
+      backgroundImage: {
+        'hero-gradient': 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #172554 100%)',
+        'brand-gradient': 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #3b82f6 100%)',
+        'glass-gradient': 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+        'grid-pattern': "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='none' stroke='%23ffffff10' stroke-width='1'%3e%3cpath d='M0 0h40v40H0z'/%3e%3c/svg%3e\")",
+      },
+      animation: {
+        'fade-in-up': 'fadeInUp 0.6s ease-out',
+        'fade-in': 'fadeIn 0.5s ease-out',
+        'float': 'float 6s ease-in-out infinite',
+        'glow': 'glow 3s ease-in-out infinite alternate',
+        'shimmer': 'shimmer 2s linear infinite',
+        'gradient-x': 'gradientX 5s ease infinite',
+      },
+      keyframes: {
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-12px)' },
+        },
+        glow: {
+          '0%': { opacity: '0.4' },
+          '100%': { opacity: '0.8' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        gradientX: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
       },
     },
   },

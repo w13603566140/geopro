@@ -4,82 +4,172 @@
 
 @layer base {
   html {
-    font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, sans-serif;
+    font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', -apple-system, sans-serif;
     scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-gray-50 text-slate-900 antialiased;
+    @apply bg-slate-50 text-slate-900 antialiased;
   }
+
+  /* 自定义滚动条 */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { @apply bg-slate-100; }
+  ::-webkit-scrollbar-thumb { @apply bg-slate-300 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-slate-400; }
 }
 
 @layer components {
+  /* 按钮系统 - 高端渐变质感 */
   .btn-primary {
-    @apply bg-primary-600 text-white px-6 py-2.5 rounded-lg font-medium
-      hover:bg-primary-700 transition-colors duration-200
-      disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply relative bg-gradient-to-r from-primary-600 to-violet-600 text-white px-6 py-2.5 rounded-xl font-medium
+      shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/40
+      hover:-translate-y-0.5 transition-all duration-300
+      disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
   }
 
   .btn-secondary {
-    @apply bg-white text-gray-700 px-6 py-2.5 rounded-lg font-medium border border-gray-300
-      hover:bg-gray-50 transition-colors duration-200
-      disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-white text-gray-700 px-6 py-2.5 rounded-xl font-medium border border-slate-200
+      shadow-sm hover:shadow-md hover:border-primary-300 hover:text-primary-700
+      hover:-translate-y-0.5 transition-all duration-300
+      disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
   }
 
   .btn-danger {
-    @apply bg-danger-500 text-white px-6 py-2.5 rounded-lg font-medium
-      hover:bg-danger-600 transition-colors duration-200
-      disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-gradient-to-r from-red-500 to-rose-600 text-white px-6 py-2.5 rounded-xl font-medium
+      shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/40
+      hover:-translate-y-0.5 transition-all duration-300
+      disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
   }
 
+  .btn-ghost {
+    @apply text-gray-600 px-4 py-2 rounded-lg font-medium
+      hover:bg-slate-100 hover:text-gray-900 transition-all duration-200;
+  }
+
+  /* 卡片系统 - 玻璃拟态 + 深度阴影 */
   .card {
-    @apply bg-white rounded-xl border border-gray-200 shadow-sm;
+    @apply bg-white rounded-2xl border border-slate-200/80 shadow-sm;
   }
 
   .card-hover {
-    @apply card hover:shadow-md hover:border-primary-200 transition-all duration-200;
+    @apply card hover:shadow-2xl hover:shadow-slate-200/60 hover:border-primary-200
+      hover:-translate-y-1 transition-all duration-300;
   }
 
+  .card-glass {
+    @apply bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-xl;
+  }
+
+  .card-glow {
+    @apply card relative overflow-hidden;
+  }
+
+  .card-glow::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-br from-primary-500/5 via-transparent to-violet-500/5
+      opacity-0 transition-opacity duration-500;
+  }
+
+  .card-glow:hover::before {
+    @apply opacity-100;
+  }
+
+  /* 输入框系统 */
   .input-field {
-    @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm
-      focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
-      placeholder:text-gray-400 transition-all duration-200;
+    @apply w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm bg-white
+      focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500
+      placeholder:text-slate-400 transition-all duration-200
+      hover:border-slate-400;
   }
 
   .label {
-    @apply block text-sm font-medium text-gray-700 mb-1.5;
+    @apply block text-sm font-medium text-slate-700 mb-1.5;
   }
 
+  /* 徽章系统 */
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
 
-  .badge-success { @apply badge bg-green-100 text-green-800; }
-  .badge-warning { @apply badge bg-yellow-100 text-yellow-800; }
-  .badge-danger { @apply badge bg-red-100 text-red-800; }
-  .badge-info { @apply badge bg-blue-100 text-blue-800; }
+  .badge-success { @apply badge bg-emerald-100 text-emerald-700; }
+  .badge-warning { @apply badge bg-amber-100 text-amber-700; }
+  .badge-danger { @apply badge bg-red-100 text-red-700; }
+  .badge-info { @apply badge bg-blue-100 text-blue-700; }
+  .badge-primary { @apply badge bg-primary-100 text-primary-700; }
 
+  /* 统计卡片 */
   .stat-card {
-    @apply card p-6 flex flex-col gap-2;
+    @apply card p-6 flex flex-col gap-2 relative overflow-hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    @apply absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 to-violet-500
+      opacity-0 transition-opacity duration-300;
+  }
+
+  .stat-card:hover::before {
+    @apply opacity-100;
   }
 
   .stat-value {
-    @apply text-3xl font-bold text-gray-900;
+    @apply text-3xl font-bold text-slate-900;
   }
 
   .stat-label {
-    @apply text-sm text-gray-500;
+    @apply text-sm text-slate-500;
   }
 
+  /* Tab系统 */
   .tab-item {
-    @apply px-4 py-2.5 text-sm font-medium rounded-lg cursor-pointer transition-colors;
+    @apply px-4 py-2.5 text-sm font-medium rounded-xl cursor-pointer transition-all duration-200;
   }
 
   .tab-item-active {
-    @apply tab-item bg-primary-50 text-primary-700;
+    @apply tab-item bg-primary-50 text-primary-700 shadow-sm;
   }
 
   .tab-item-inactive {
     @apply tab-item text-gray-600 hover:bg-gray-100;
+  }
+
+  /* 渐变文字 */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-600 via-violet-600 to-blue-600 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-light {
+    @apply bg-gradient-to-r from-white via-blue-100 to-violet-200 bg-clip-text text-transparent;
+  }
+
+  /* 玻璃拟态导航 */
+  .nav-glass {
+    @apply bg-white/80 backdrop-blur-xl border-b border-white/60;
+  }
+
+  /* 发光效果 */
+  .glow-primary {
+    box-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
+  }
+
+  .glow-violet {
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
+  }
+
+  /* 渐变边框 */
+  .gradient-border {
+    position: relative;
+    background: white;
+    border-radius: 1rem;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #3b82f6);
+    border-radius: 1rem;
+    z-index: -1;
   }
 }
