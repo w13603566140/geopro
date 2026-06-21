@@ -27,7 +27,6 @@ const config: Config = {
         danger: { 500: '#ef4444', 600: '#dc2626' },
       },
       fontFamily: {
-      fontFamily: {
         sans: ['Inter', 'PingFang SC', 'Microsoft YaHei', 'sans-serif'],
         display: ['Inter', 'PingFang SC', 'Microsoft YaHei', 'sans-serif'],
       },
@@ -35,7 +34,6 @@ const config: Config = {
         'hero-gradient': 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #172554 100%)',
         'brand-gradient': 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #3b82f6 100%)',
         'glass-gradient': 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-        'grid-pattern': "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='none' stroke='%23ffffff10' stroke-width='1'%3e%3cpath d='M0 0h40v40H0z'/%3e%3c/svg%3e\")",
       },
       animation: {
         'fade-in-up': 'fadeInUp 0.6s ease-out',
@@ -55,8 +53,9 @@ const config: Config = {
           '100%': { opacity: '1' },
         },
         float: {
-          '0%, 100%': { transform: 'translateY(0)' },
+          '0%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-12px)' },
+          '100%': { transform: 'translateY(0)' },
         },
         glow: {
           '0%': { opacity: '0.4' },
@@ -67,8 +66,9 @@ const config: Config = {
           '100%': { backgroundPosition: '200% 0' },
         },
         gradientX: {
-          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '0%': { backgroundPosition: '0% 50%' },
           '50%': { backgroundPosition: '100% 50%' },
+          '100%': { backgroundPosition: '0% 50%' },
         },
       },
     },
