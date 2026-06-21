@@ -13,6 +13,7 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,17 +82,24 @@ export default function RegisterPage() {
             <input type="password" className="input-field" placeholder="再次输入密码"
               value={form.confirmPassword} onChange={e => setForm({ ...form, confirmPassword: e.target.value })} required />
           </div>
-          <button type="submit" className="btn-primary w-full !py-3" disabled={loading}>
+          <label className="flex items-start gap-2 mb-4 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={e => setAgreed(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <span className="text-xs text-gray-500">
+              注册即表示同意{' '}
+              <Link href="/terms" target="_blank" className="text-primary-600 hover:underline">服务条款</Link>
+              {' '}和{' '}
+              <Link href="/privacy" target="_blank" className="text-primary-600 hover:underline">隐私政策</Link>
+            </span>
+          </label>
+          <button type="submit" className="btn-primary w-full !py-3" disabled={loading || !agreed}>
             {loading ? '注册中...' : '免费注册'}
           </button>
         </form>
-
-        <p className="text-center text-sm text-gray-500 mt-4">
-          注册即表示同意{' '}
-          <Link href="/terms" className="text-primary-600 hover:underline">服务条款</Link>
-          {' '}和{' '}
-          <Link href="/privacy" className="text-primary-600 hover:underline">隐私政策</Link>
-        </p>
 
         <p className="text-center text-sm text-gray-500 mt-4">
           已有账号？{' '}

@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Settings, Users, CreditCard,
   Receipt, ScrollText, Shield, LogOut, Menu, ChevronLeft,
   Send, Briefcase, Package, Compass, Server, TrendingUp,
-  AlertTriangle, Activity, Home,
+  AlertTriangle, Activity, Home, FileText,
 } from 'lucide-react';
 
 const adminNavItems = [
@@ -21,6 +21,7 @@ const adminNavItems = [
   { href: '/admin/templates', label: '模板管理', icon: Package },
   { href: '/admin/managed', label: '代运营管理', icon: Briefcase },
   { href: '/admin/onboarding', label: '引导配置', icon: Compass },
+  { href: '/admin/legal', label: '法律文档', icon: FileText },
   { href: '/admin/logs', label: '操作日志', icon: ScrollText },
 ];
 

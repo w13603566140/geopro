@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,10 +72,25 @@ export default function LoginPage() {
           <button
             type="submit"
             className="btn-primary w-full !py-3"
-            disabled={loading}
+            disabled={loading || !agreed}
           >
             {loading ? '登录中...' : '登录'}
           </button>
+
+          <label className="flex items-start gap-2 mt-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={e => setAgreed(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <span className="text-xs text-gray-500">
+              登录即表示同意{' '}
+              <Link href="/terms" target="_blank" className="text-primary-600 hover:underline">服务条款</Link>
+              {' '}和{' '}
+              <Link href="/privacy" target="_blank" className="text-primary-600 hover:underline">隐私政策</Link>
+            </span>
+          </label>
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-6">
