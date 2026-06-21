@@ -16,6 +16,16 @@ sitesRouter.get('/', async (req: AuthRequest, res: Response) => {
     });
     res.json({ success: true, data: sites });
   } catch (error) {
+    if (process.env.DEMO_MODE === 'true') {
+      return res.json({
+        success: true,
+        data: [
+          { id: 'demo-site-1', name: 'AI网关Pro官网', url: 'https://example.com', type: 'OFFICIAL_WEBSITE', isVerified: true, status: 'ACTIVE', geoScore: 85, lastAuditAt: new Date().toISOString(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+          { id: 'demo-site-2', name: '开发文档站', url: 'https://docs.example.com', type: 'DOCS_SITE', isVerified: true, status: 'ACTIVE', geoScore: 72, lastAuditAt: new Date().toISOString(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+          { id: 'demo-site-3', name: '开源项目页', url: 'https://github.com/example/project', type: 'OPEN_SOURCE', isVerified: false, status: 'PENDING', geoScore: 58, lastAuditAt: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        ]
+      });
+    }
     res.status(500).json({ success: false, error: '获取站点列表失败' });
   }
 });
@@ -47,6 +57,31 @@ sitesRouter.post('/', async (req: AuthRequest, res: Response) => {
     const { name, url, type, brandName, productName, mainService, industry, targetCustomer, framework } = req.body;
 
     if (!name || !url) throw new AppError('站点名称和URL为必填项', 400);
+
+    // DEMO_MODE 下跳过数据库操作，返回模拟数据
+    if (process.env.DEMO_MODE === 'true') {
+      const demoSite = {
+        id: 'demo-site-' + Date.now(),
+        userId: req.userId || 'demo-user-001',
+        name,
+        url,
+        type: type || 'OFFICIAL_WEBSITE',
+        brandName: brandName || null,
+        productName: productName || null,
+        mainService: mainService || null,
+        industry: industry || null,
+        targetCustomer: targetCustomer || null,
+        framework: framework || 'OTHER',
+        isVerified: false,
+        status: 'PENDING',
+        geoScore: null,
+        lastAuditAt: null,
+        verificationToken: `geo-verify-${Date.now().toString(36)}`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      return res.status(201).json({ success: true, data: demoSite });
+    }
 
     // 检查站点数量限制
     const user = await prisma.user.findUnique({ where: { id: req.userId } });

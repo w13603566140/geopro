@@ -56,11 +56,13 @@ export default function SitesClient() {
       const res = await sitesApi.create(form);
       if (res.success && res.data) {
         setSites([res.data as SiteData, ...sites]);
+        setShowAdd(false);
+        setForm({ name: '', url: '', type: 'OFFICIAL_WEBSITE', brandName: '', productName: '', mainService: '', industry: '', targetCustomer: '' });
+      } else {
+        alert(res.error || '添加站点失败');
       }
-      setShowAdd(false);
-      setForm({ name: '', url: '', type: 'OFFICIAL_WEBSITE', brandName: '', productName: '', mainService: '', industry: '', targetCustomer: '' });
-    } catch (err) {
-      alert('添加站点失败，请检查URL格式');
+    } catch (err: any) {
+      alert(err.message || '添加站点失败，请稍后重试');
     } finally {
       setLoading(false);
     }
