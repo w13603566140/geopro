@@ -75,7 +75,7 @@ export default function AuditPage() {
 
       {error && <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-600 text-sm">{error}</div>}
 
-      {report && (<ResultsBlock report={report} expandedSection={expandedSection} setExpandedSection={setExpandedSection} />)}
+      {report && (<ResultsBlock report={report} expandedSection={expandedSection} setExpandedSection={setExpandedSection} brandName={brandName} siteUrl={siteUrl} />)}
 
       {!report && !loading && (
         <div className="card p-12 text-center"><div className="text-6xl mb-4">🤖</div><h3 className="text-lg font-medium text-gray-700 mb-2">AI可见度诊断</h3><p className="text-gray-500">填写品牌和行业词，自动查询8大AI模型的品牌可见度</p></div>
@@ -84,17 +84,63 @@ export default function AuditPage() {
   );
 }
 
-function ResultsBlock({ report, expandedSection, setExpandedSection }: any) {
+function ResultsBlock({ report, expandedSection, setExpandedSection, brandName, siteUrl }: any) {
+  const [selectedActions, setSelectedActions] = useState<Set<string>>(new Set());
+  const [executing, setExecuting] = useState(false);
+  const [executed, setExecuted] = useState<Set<string>>(new Set());
+
+  // Flatten all actions with unique IDs
+  const allSections = [
+    { title: '紧急行动 (1-3天)', color: 'red', items: report.optimizationPlan.urgentActions, prefix: 'urgent' },
+    { title: '短期计划 (1-2周)', color: 'amber', items: report.optimizationPlan.shortTermActions, prefix: 'short' },
+    { title: '长期战略 (1-3个月)', color: 'blue', items: report.optimizationPlan.longTermActions, prefix: 'long' },
+  ];
+
+  const allActions = allSections.flatMap(s => s.items.map((a: any, i: number) => ({
+    ...a, id: `${s.prefix}-${i}`, sectionColor: s.color, sectionTitle: s.title
+  })));
+
+  const selectedCount = selectedActions.size;
+
+  const toggleAction = (id: string) => {
+    const next = new Set(selectedActions);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedActions(next);
+  };
+
+  const toggleAll = (sectionPrefix: string) => {
+    const sectionIds = allActions.filter(a => a.id.startsWith(sectionPrefix)).map(a => a.id);
+    const allSelected = sectionIds.every(id => selectedActions.has(id));
+    const next = new Set(selectedActions);
+    sectionIds.forEach(id => allSelected ? next.delete(id) : next.add(id));
+    setSelectedActions(next);
+  };
+
+  const executeSelected = async () => {
+    setExecuting(true);
+    // 模拟执行优化
+    await new Promise(r => setTimeout(r, 2000));
+    const done = new Set(selectedActions);
+    setExecuted(new Set([...executed, ...done]));
+    setSelectedActions(new Set());
+    setExecuting(false);
+  };
+
   return (
     <div className="space-y-6">
+      {/* 评分卡 */}
       <div className={"card p-8 border-2 text-center " + (report.summary.overallScore >= 70 ? 'bg-green-50 border-green-200' : report.summary.overallScore >= 40 ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200')}>
         <div className={"text-6xl font-extrabold mb-2 " + (report.summary.overallScore >= 70 ? 'text-green-600' : report.summary.overallScore >= 40 ? 'text-yellow-600' : 'text-red-600')}>{report.summary.overallScore}</div>
         <div className="text-gray-600 font-medium">AI可见度综合评分 / 100</div>
         <div className="text-sm text-gray-400 mt-1">{report.summary.visiblePlatforms}/{report.summary.totalPlatforms} 平台可见 · {report.summary.firstPlacePlatforms} 个首位</div>
       </div>
+
+      {/* 统计 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[{label:'可见平台',value:`${report.summary.visiblePlatforms}/${report.summary.totalPlatforms}`,icon:'👁️',color:'text-blue-600'},{label:'首位占位',value:report.summary.firstPlacePlatforms,icon:'🥇',color:'text-amber-600'},{label:'可见率',value:`${report.summary.visibilityRate}%`,icon:'📊',color:'text-green-600'},{label:'平均排名',value:report.summary.averageRank||'-',icon:'📈',color:'text-purple-600'}].map(s=>(<div key={s.label} className="card p-4 text-center"><div className="text-2xl mb-1">{s.icon}</div><div className={`text-xl font-bold ${s.color}`}>{s.value}</div><div className="text-xs text-gray-500">{s.label}</div></div>))}
       </div>
+
+      {/* 模型详情 */}
       <div className="card p-6">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><Target className="w-5 h-5 text-primary-600" /> AI模型可见度详情</h2>
         <div className="space-y-3">
@@ -112,10 +158,117 @@ function ResultsBlock({ report, expandedSection, setExpandedSection }: any) {
           </div>))}
         </div>
       </div>
+
+      {/* 可选择的优化方案 */}
       <div className="card p-6">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><Zap className="w-5 h-5 text-yellow-500" /> 品牌优化方案</h2>
-        {[{title:'紧急行动 (1-3天)',color:'red',items:report.optimizationPlan.urgentActions},{title:'短期计划 (1-2周)',color:'amber',items:report.optimizationPlan.shortTermActions},{title:'长期战略 (1-3个月)',color:'blue',items:report.optimizationPlan.longTermActions}].map((s:any)=>(<div key={s.title} className="mb-4 last:mb-0"><h3 className={`text-sm font-medium text-${s.color}-600 mb-3 flex items-center gap-2`}><AlertCircle className="w-4 h-4"/>{s.title}</h3><div className="space-y-2">{s.items.map((a:any,i:number)=>(<div key={i} className={`flex items-start gap-3 p-3 bg-${s.color}-50 border border-${s.color}-100 rounded-lg`}><span className={`text-xs px-2 py-0.5 rounded font-bold ${s.color==='red'?'bg-red-500 text-white':s.color==='amber'?'bg-amber-500 text-white':'bg-blue-500 text-white'}`}>{a.priority==='high'?'高优':a.priority==='medium'?'中优':'低优'}</span><div className="flex-1"><p className={`text-sm text-${s.color}-700`}>{a.action}</p><p className={`text-xs text-${s.color}-400 mt-1`}>预期: {a.estimatedImpact}</p></div></div>))}</div></div>))}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2"><Zap className="w-5 h-5 text-yellow-500" /> 品牌优化方案</h2>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span>已选 <b className="text-primary-600">{selectedCount}</b> / {allActions.length} 项</span>
+          </div>
+        </div>
+
+        {allSections.map(section => {
+          const sectionIds = allActions.filter(a => a.id.startsWith(section.prefix)).map(a => a.id);
+          const sectionSelected = sectionIds.filter(id => selectedActions.has(id)).length;
+          const sectionDone = sectionIds.filter(id => executed.has(id)).length;
+          const sectionTotal = sectionIds.length;
+          const allSelected = sectionIds.every(id => selectedActions.has(id));
+
+          return (
+            <div key={section.title} className="mb-6 last:mb-0">
+              {/* 段落标题 + 全选 */}
+              <div className="flex items-center justify-between mb-3">
+                <h3 className={`text-sm font-semibold text-${section.color}-600 flex items-center gap-2`}>
+                  <AlertCircle className="w-4 h-4" />
+                  {section.title}
+                  {sectionDone > 0 && <span className="badge-success text-xs">{sectionDone} 已完成</span>}
+                </h3>
+                <button onClick={() => toggleAll(section.prefix)}
+                  className={`text-xs px-3 py-1 rounded-lg border transition-colors ${
+                    allSelected ? 'bg-primary-50 border-primary-300 text-primary-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+                  }`}>
+                  {allSelected ? '✓ 取消全选' : '全选'}
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {section.items.map((a: any, i: number) => {
+                  const id = `${section.prefix}-${i}`;
+                  const isSelected = selectedActions.has(id);
+                  const isDone = executed.has(id);
+                  return (
+                    <div key={i}
+                      onClick={() => !isDone && toggleAction(id)}
+                      className={`flex items-start gap-3 p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                        isDone
+                          ? 'bg-green-50 border-green-300 opacity-80 cursor-default'
+                          : isSelected
+                            ? `bg-${section.color}-100 border-${section.color}-400 shadow-sm`
+                            : `bg-${section.color}-50 border-${section.color}-100 hover:shadow-sm`
+                      }`}>
+                      <div className="mt-0.5 flex-shrink-0">
+                        {isDone ? (
+                          <CheckCircle className="w-5 h-5 text-green-500" />
+                        ) : (
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                            isSelected ? 'bg-primary-600 border-primary-600' : 'border-gray-300 bg-white'
+                          }`}>
+                            {isSelected && <CheckCircle className="w-3.5 h-3.5 text-white" />}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-xs px-2 py-0.5 rounded font-bold ${
+                            section.color==='red'?'bg-red-500 text-white':section.color==='amber'?'bg-amber-500 text-white':'bg-blue-500 text-white'
+                          }`}>{a.priority==='high'?'高优':a.priority==='medium'?'中优':'低优'}</span>
+                          <span className={`text-sm font-medium ${isDone ? 'text-green-700' : `text-${section.color}-700`}`}>
+                            {isDone && '✅ '}{a.action}
+                          </span>
+                        </div>
+                        <p className={`text-xs ml-0 ${isDone ? 'text-green-500' : `text-${section.color}-400`}`}>
+                          预期效果: {a.estimatedImpact} · 难度: {a.difficulty==='easy'?'⭐简单':a.difficulty==='medium'?'⭐⭐中等':'⭐⭐⭐较难'}
+                          {a.targetPlatforms && <span className="ml-2">· 适用平台: {a.targetPlatforms.join(', ')}</span>}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* 底部执行栏 */}
+        <div className="mt-6 pt-4 border-t border-gray-200 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSelectedActions(new Set(allActions.map(a => a.id)))} className="text-sm text-gray-500 hover:text-primary-600">
+              一键全选全部方案
+            </button>
+            <button onClick={() => setSelectedActions(new Set())} className="text-sm text-gray-400 hover:text-gray-600">
+              清空选择
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="btn-secondary flex items-center gap-2"><Download className="w-4 h-4"/>导出方案</button>
+            <button
+              onClick={executeSelected}
+              disabled={selectedCount === 0 || executing}
+              className="btn-primary flex items-center gap-2"
+            >
+              {executing ? (
+                <><RefreshCw className="w-4 h-4 animate-spin" /> 执行中...</>
+              ) : (
+                <><Zap className="w-4 h-4" /> 执行选中优化 ({selectedCount}项)
+                {executed.size > 0 && <span className="text-xs opacity-75">· 已完成{executed.size}项</span>}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
+
       <div className="flex gap-3"><button className="btn-secondary flex items-center gap-2"><Download className="w-4 h-4"/>导出诊断报告PDF</button></div>
     </div>
   );
