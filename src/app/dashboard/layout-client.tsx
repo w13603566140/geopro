@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Globe, FileSearch, Tags, FileText,
   BarChart3, Users, CreditCard, Settings, LogOut, ScrollText, TrendingUp,
   ChevronLeft, Menu, Sparkles, Shield, Zap,
-  Send, Compass, Briefcase, Package, ChevronDown,
+  Send, Compass, Briefcase, Package, ChevronDown, Wallet,
 } from 'lucide-react';
 
 // 二级导航分组结构
@@ -64,6 +64,7 @@ const navGroups: NavGroup[] = [
     title: '财务与账号',
     icon: CreditCard,
     children: [
+      { href: '/dashboard/credits', label: '积分中心', icon: Wallet },
       { href: '/dashboard/billing', label: '套餐计费', icon: CreditCard },
       { href: '/dashboard/consumption', label: '消耗明细', icon: ScrollText },
       { href: '/dashboard/quanyi', label: '账号权益', icon: Shield },

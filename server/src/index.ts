@@ -23,6 +23,7 @@ import managedRouter from './routes/managed';
 import templatesRouter from './routes/templates';
 import onboardingRouter from './routes/onboarding';
 import adminAuthRouter from './routes/admin-auth';
+import creditsRouter from './routes/credits';
 import { startScheduler } from './services/scheduler';
 import { errorHandler } from './middleware/error-handler';
 import { authenticate } from './middleware/auth';
@@ -81,6 +82,7 @@ app.use('/api/publish', authenticate, publishRouter);
 app.use('/api/managed', authenticate, managedRouter);
 app.use('/api/templates', authenticate, templatesRouter);
 app.use('/api/onboarding', authenticate, onboardingRouter);
+app.use('/api/credits', authenticate, creditsRouter);
 
 // 启动定时任务
 startScheduler();
