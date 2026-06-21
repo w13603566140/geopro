@@ -111,7 +111,51 @@ export const AI_MODELS: Record<string, AIModelConfig> = {
   },
 };
 
-// 诊断问句模板（根据不同行业自动匹配）
+// API密钥配置 (从环境变量读取)
+const API_KEYS: Record<string, string> = {
+  deepseek: process.env.DEEPSEEK_API_KEY || '',
+  kimi: process.env.KIMI_API_KEY || '',
+  tongyi: process.env.TONGYI_API_KEY || '',
+  zhipu: process.env.ZHIPU_API_KEY || '',
+  doubao: process.env.DOUBAO_API_KEY || '',
+};
+
+/**
+ * 真实调用 OpenAI 兼容的 AI 模型 API
+ * 支持: DeepSeek, Kimi(Moonshot), 通义千问(DashScope), 智谱清言
+ */
+async function callRealAI(
+  modelConfig: AIModelConfig,
+  messages: { role: string; content: string }[]
+): Promise<string | null> {
+  const apiKey = API_KEYS[modelConfig.key];
+  if (!apiKey || !modelConfig.apiEndpoint) return null;
+
+  try {
+    const response = await fetch(modelConfig.apiEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: modelConfig.key === 'kimi' ? 'moonshot-v1-8k' :
+               modelConfig.key === 'deepseek' ? 'deepseek-chat' :
+               modelConfig.key === 'zhipu' ? 'glm-4' : 'qwen-turbo',
+        messages,
+        max_tokens: 500,
+        temperature: 0.3,
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || null;
+  } catch {
+    return null;
+  }
+}
 const DIAGNOSIS_QUESTIONS: Record<string, string[]> = {
   default: [
     '{brand} 怎么样？好不好用？',
@@ -133,7 +177,7 @@ const DIAGNOSIS_QUESTIONS: Record<string, string[]> = {
 };
 
 /**
- * 模拟查询单个AI模型
+ * 查询单个AI模型 (优先真实API，回退模拟)
  */
 async function queryAIModel(
   modelConfig: AIModelConfig,
@@ -141,7 +185,50 @@ async function queryAIModel(
   industryWords: string[],
   siteUrl: string
 ): Promise<AIVisibilityResult> {
-  // 模拟API延迟
+  const question = `请推荐${industryWords.join('、')}领域的优秀产品或服务，特别是关于${brandName}的评价如何？`;
+
+  // 尝试真实API调用
+  let realResponse: string | null = null;
+  if (modelConfig.apiType === 'openai') {
+    realResponse = await callRealAI(modelConfig, [
+      { role: 'system', content: '你是一个专业的产品推荐助手，请客观评价和推荐用户询问的产品。' },
+      { role: 'user', content: question },
+    ]);
+  }
+
+  // 如果真实API返回了结果，解析可见度
+  if (realResponse) {
+    const mentioned = realResponse.includes(brandName);
+    const rank = mentioned ? 1 : null;
+    return {
+      modelKey: modelConfig.key, modelName: modelConfig.name, modelIcon: modelConfig.icon,
+      visible: mentioned, rank, brandMentioned: mentioned,
+      responseSnippet: realResponse.slice(0, 300),
+      referredUrl: mentioned ? siteUrl : '',
+      confidence: 85,
+      topCompetitors: extractCompetitors(realResponse, brandName),
+      suggestions: mentioned
+        ? [`✅ ${modelConfig.name} 真实API查询确认品牌可见`]
+        : [`🚨 ${modelConfig.name} 真实API未提及品牌，需优化内容`],
+    };
+  }
+
+  // 回退到模拟模式
+  return simulateQuery(modelConfig, brandName, industryWords, siteUrl);
+}
+
+function extractCompetitors(text: string, brandName: string): string[] {
+  const known = ['OpenAI', '百度', '阿里', '腾讯', '华为', '字节', '京东', 'Kimi', '豆包', '通义千问', '文心一言', 'DeepSeek'];
+  return known.filter(c => c !== brandName && text.includes(c)).slice(0, 3);
+}
+
+/** 模拟查询 (当无API密钥时使用) */
+function simulateQuery(
+  modelConfig: AIModelConfig,
+  brandName: string,
+  industryWords: string[],
+  siteUrl: string
+): Promise<AIVisibilityResult> {
   const delay = 500 + Math.random() * 1500;
   await new Promise(r => setTimeout(r, delay));
 

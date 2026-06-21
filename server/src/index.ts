@@ -17,6 +17,8 @@ import { billingRouter } from './routes/billing';
 import { settingsRouter } from './routes/settings';
 import { adminRouter } from './routes/admin';
 import { diagnosisRouter } from './routes/diagnosis';
+import { paymentRouter } from './routes/payment-callback';
+import { startScheduler } from './services/scheduler';
 import { errorHandler } from './middleware/error-handler';
 import { authenticate } from './middleware/auth';
 
@@ -68,6 +70,10 @@ app.use('/api/billing', authenticate, billingRouter);
 app.use('/api/settings', authenticate, settingsRouter);
 app.use('/api/admin', authenticate, adminRouter);
 app.use('/api/diagnosis', authenticate, diagnosisRouter);
+app.use('/api/payment', paymentRouter);  // 支付回调不需要认证
+
+// 启动定时任务
+startScheduler();
 
 // ========== 错误处理 ==========
 

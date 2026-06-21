@@ -67,3 +67,18 @@ diagnosisRouter.post('/quick-query', async (req: AuthRequest, res: Response) => 
     res.status(500).json({ success: false, error: '查询失败' });
   }
 });
+
+/**
+ * 导出PDF诊断报告
+ */
+diagnosisRouter.post('/export-pdf', (req: AuthRequest, res: Response) => {
+  try {
+    const { generatePDFReport } = require('../services/report-generator');
+    const doc = generatePDFReport(req.body);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=geo-report-${Date.now()}.pdf`);
+    doc.pipe(res);
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'PDF生成失败' });
+  }
+});
