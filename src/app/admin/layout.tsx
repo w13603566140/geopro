@@ -42,6 +42,13 @@ const adminNavGroups: NavGroup[] = [
     ],
   },
   {
+    title: '数据分析',
+    icon: BarChart3,
+    children: [
+      { href: '/admin/analytics', label: '数据统计', icon: BarChart3 },
+    ],
+  },
+  {
     title: '用户与财务',
     icon: Users,
     children: [
