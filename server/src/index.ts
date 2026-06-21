@@ -22,6 +22,7 @@ import publishRouter from './routes/publish';
 import managedRouter from './routes/managed';
 import templatesRouter from './routes/templates';
 import onboardingRouter from './routes/onboarding';
+import adminAuthRouter from './routes/admin-auth';
 import { startScheduler } from './services/scheduler';
 import { errorHandler } from './middleware/error-handler';
 import { authenticate } from './middleware/auth';
@@ -75,6 +76,7 @@ app.use('/api/settings', authenticate, settingsRouter);
 app.use('/api/admin', authenticate, adminRouter);
 app.use('/api/diagnosis', authenticate, diagnosisRouter);
 app.use('/api/payment', paymentRouter);  // 支付回调不需要认证
+app.use('/api/admin-auth', adminAuthRouter);  // 管理后台独立认证
 app.use('/api/publish', authenticate, publishRouter);
 app.use('/api/managed', authenticate, managedRouter);
 app.use('/api/templates', authenticate, templatesRouter);

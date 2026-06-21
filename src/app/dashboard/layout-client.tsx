@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import {
   LayoutDashboard, Globe, FileSearch, Tags, FileText,
   BarChart3, Users, CreditCard, Settings, LogOut, ScrollText, TrendingUp,
-  ChevronLeft, Menu, Sparkles, Shield, Zap, Cog,
+  ChevronLeft, Menu, Sparkles, Shield, Zap,
   Send, Compass, Briefcase, Package,
 } from 'lucide-react';
 
@@ -28,7 +28,6 @@ const navItems = [
   { href: '/dashboard/consumption', label: '消耗明细', icon: ScrollText },
   { href: '/dashboard/quanyi', label: '账号权益', icon: Shield },
   { href: '/dashboard/settings', label: '系统设置', icon: Settings },
-  { href: '/dashboard/admin', label: '管理后台', icon: Cog, adminOnly: true },
 ];
 
 const planNames: Record<string, string> = { FREE: '免费版', PROFESSIONAL: '专业版', ENTERPRISE: '企业版' };
