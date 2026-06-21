@@ -6,10 +6,12 @@ import { IntentType, ContentLanguage, GeneratedContentData } from '@/types';
 import { generateGeoContent, mineHighValueQuestions } from '@/lib/ai/content-generator';
 
 const CONTENT_TYPES = [
-  { value: 'TUTORIAL', label: '分步教程', icon: '📖' },
-  { value: 'REVIEW', label: '产品测评', icon: '⭐' },
-  { value: 'COMPARISON', label: '对比选型', icon: '⚖️' },
-  { value: 'FAQ', label: 'FAQ问答库', icon: '❓' },
+  { value: 'TUTORIAL', label: '分步教程', icon: '📖', desc: 'AI最爱引用的部署配置教程' },
+  { value: 'REVIEW', label: '产品测评', icon: '⭐', desc: '深度评测文章，AI优先用于推荐' },
+  { value: 'COMPARISON', label: '对比选型', icon: '⚖️', desc: '多产品维度对比，抢占选型流量' },
+  { value: 'FAQ', label: 'FAQ问答库', icon: '❓', desc: '权重最高，AI直接摘抄回答用户' },
+  { value: 'GUIDE', label: '行业选型指南', icon: '🧭', desc: '"XX行业用什么好"类问句专用' },
+  { value: 'NEWS', label: '产品新闻稿', icon: '📰', desc: '新品发布/版本更新类公告文章' },
 ];
 
 export default function ContentPage() {

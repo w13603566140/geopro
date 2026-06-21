@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import {
   LayoutDashboard, Globe, FileSearch, Tags, FileText,
-  BarChart3, Users, CreditCard, Settings, LogOut, ScrollText,
+  BarChart3, Users, CreditCard, Settings, LogOut, ScrollText, TrendingUp,
   ChevronLeft, Menu, Sparkles, Shield, Zap, Cog,
 } from 'lucide-react';
 
@@ -17,6 +17,7 @@ const navItems = [
   { href: '/dashboard/structured-data', label: '结构化标签', icon: Tags },
   { href: '/dashboard/content', label: '内容生产', icon: FileText },
   { href: '/dashboard/monitoring', label: '排名监测', icon: BarChart3 },
+  { href: '/dashboard/datacenter', label: 'AI数据中心', icon: TrendingUp },
   { href: '/dashboard/competitors', label: '竞品分析', icon: Users },
   { href: '/dashboard/mcp', label: 'Agent/MCP', icon: Zap },
   { href: '/dashboard/billing', label: '套餐计费', icon: CreditCard },

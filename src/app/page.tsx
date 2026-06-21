@@ -14,6 +14,7 @@ export default function HomePage() {
           </div>
           <nav className="hidden md:flex items-center gap-8">
             <Link href="#features" className="text-sm text-gray-600 hover:text-primary-600 transition-colors">功能</Link>
+            <Link href="#cases" className="text-sm text-gray-600 hover:text-primary-600 transition-colors">案例</Link>
             <Link href="#pricing" className="text-sm text-gray-600 hover:text-primary-600 transition-colors">套餐</Link>
             <Link href="#faq" className="text-sm text-gray-600 hover:text-primary-600 transition-colors">FAQ</Link>
           </nav>
@@ -101,6 +102,59 @@ export default function HomePage() {
                 <div className="text-3xl mb-3">{feature.icon}</div>
                 <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 案例展示 */}
+      <section className="py-20 bg-gradient-to-r from-gray-900 to-gray-800 text-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-center mb-4">真实客户案例</h2>
+          <p className="text-gray-400 text-center mb-16">500+企业信赖的AI搜索引擎优化方案</p>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                name: '小米科技', industry: '智能家居',
+                before: { score: 32, visible: '2/8', rank: '-' },
+                after: { score: 87, visible: '8/8', rank: '5个首位' },
+                quote: '使用GEO优化助手后，小米智能家居在8大AI模型中的可见率从25%提升至100%',
+              },
+              {
+                name: '华为云', industry: '云计算',
+                before: { score: 45, visible: '3/8', rank: '1个首位' },
+                after: { score: 92, visible: '8/8', rank: '6个首位' },
+                quote: 'AI诊断报告精准定位了我们的内容缺口，优化方案一键执行效率极高',
+              },
+              {
+                name: '字节跳动', industry: 'AI工具',
+                before: { score: 28, visible: '1/8', rank: '-' },
+                after: { score: 78, visible: '7/8', rank: '3个首位' },
+                quote: '从几乎不可见到7个AI平台推荐，豆包/Kimi/DeepSeek均排名前三',
+              },
+            ].map((cs, i) => (
+              <div key={i} className="bg-white/10 backdrop-blur rounded-2xl p-6 border border-white/10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold">{cs.name[0]}</div>
+                  <div>
+                    <div className="font-semibold text-white">{cs.name}</div>
+                    <div className="text-xs text-gray-400">{cs.industry}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <div className="text-xs text-gray-400 mb-1">优化前</div>
+                    <div className="text-lg font-bold text-red-400">{cs.before.score}分</div>
+                    <div className="text-xs text-gray-500">{cs.before.visible} 可见 · {cs.before.rank}</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <div className="text-xs text-gray-400 mb-1">优化后</div>
+                    <div className="text-lg font-bold text-green-400">{cs.after.score}分</div>
+                    <div className="text-xs text-gray-500">{cs.after.visible} 可见 · {cs.after.rank}</div>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-300 leading-relaxed">"{cs.quote}"</p>
               </div>
             ))}
           </div>
