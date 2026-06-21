@@ -10,37 +10,36 @@ const prisma = new PrismaClient();
  */
 router.post('/analyze', authenticate, async (req: any, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId;
     const { url } = req.body;
 
     if (!url) {
       return res.status(400).json({ success: false, error: '请提供竞品网站URL' });
     }
 
-    // 检查用户积分
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || user.credits < 25) {
-      return res.status(400).json({ 
-        success: false, 
-        error: '积分不足，需要25积分进行分析' 
+    // DEMO_MODE下跳过数据库操作
+    if (process.env.DEMO_MODE !== 'true') {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user || user.credits < 25) {
+        return res.status(400).json({ 
+          success: false, 
+          error: '积分不足，需要25积分进行分析' 
+        });
+      }
+      await prisma.user.update({
+        where: { id: userId },
+        data: { credits: { decrement: 25 } }
+      });
+      await prisma.creditTransaction.create({
+        data: {
+          userId,
+          type: 'CONSUME',
+          amount: -25,
+          balance: 0,
+          description: `分析竞品网站: ${url}`
+        }
       });
     }
-
-    // 扣除积分
-    await prisma.user.update({
-      where: { id: userId },
-      data: { credits: { decrement: 25 } }
-    });
-
-    // 记录积分消耗
-    await prisma.creditLog.create({
-      data: {
-        userId,
-        type: 'traffic_clone',
-        credits: -25,
-        description: `分析竞品网站: ${url}`
-      }
-    });
 
     // 提取域名
     let domain = '';
@@ -168,7 +167,7 @@ router.post('/analyze', authenticate, async (req: any, res) => {
  */
 router.post('/generate', authenticate, async (req: any, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId;
     const { competitorUrl, keywords } = req.body;
 
     if (!keywords || !Array.isArray(keywords) || keywords.length === 0) {
@@ -177,30 +176,29 @@ router.post('/generate', authenticate, async (req: any, res) => {
 
     const totalCost = keywords.length * 5;
 
-    // 检查用户积分
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || user.credits < totalCost) {
-      return res.status(400).json({ 
-        success: false, 
-        error: `积分不足，需要${totalCost}积分生成内容` 
+    // DEMO_MODE下跳过数据库操作
+    if (process.env.DEMO_MODE !== 'true') {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user || user.credits < totalCost) {
+        return res.status(400).json({ 
+          success: false, 
+          error: `积分不足，需要${totalCost}积分生成内容` 
+        });
+      }
+      await prisma.user.update({
+        where: { id: userId },
+        data: { credits: { decrement: totalCost } }
+      });
+      await prisma.creditTransaction.create({
+        data: {
+          userId,
+          type: 'CONSUME',
+          amount: -totalCost,
+          balance: 0,
+          description: `生成对标内容: ${keywords.join(', ')}`
+        }
       });
     }
-
-    // 扣除积分
-    await prisma.user.update({
-      where: { id: userId },
-      data: { credits: { decrement: totalCost } }
-    });
-
-    // 记录积分消耗
-    await prisma.creditLog.create({
-      data: {
-        userId,
-        type: 'traffic_clone',
-        credits: -totalCost,
-        description: `生成对标内容: ${keywords.join(', ')}`
-      }
-    });
 
     // 生成对标内容（实际项目中需要调用AI API）
     let content = '# AI流量复刻 - 对标内容\n\n';
@@ -249,10 +247,10 @@ router.post('/generate', authenticate, async (req: any, res) => {
     content += `5. 监测排名和流量变化\n`;
     content += `6. 根据数据反馈持续优化\n`;
 
-    res.json({ 
-      success: true, 
-      data: { content },
-      message: `内容生成完成，消耗${totalCost}积分`
+    res.json({
+      success: true,
+      data: { content, keywordsCount: keywords.length, cost: totalCost },
+      message: `成功生成${keywords.length}个关键词的对标内容，消耗${totalCost}积分`
     });
   } catch (error) {
     console.error('生成对标内容失败:', error);

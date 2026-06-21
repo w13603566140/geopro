@@ -56,6 +56,22 @@ billingRouter.get('/usage', async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     if (error instanceof AppError) return res.status(error.statusCode).json({ success: false, error: error.message });
+    
+    // DEMO_MODE 降级
+    if (process.env.DEMO_MODE === 'true') {
+      return res.json({
+        success: true,
+        data: {
+          planTier: 'PROFESSIONAL',
+          credits: 286,
+          sitesCount: 3,
+          dailyQueriesUsed: 15,
+          contentQuota: 100,
+          planConfig: PLAN_CONFIGS.find(p => p.tier === 'PROFESSIONAL'),
+        },
+      });
+    }
+    
     res.status(500).json({ success: false, error: '获取使用情况失败' });
   }
 });

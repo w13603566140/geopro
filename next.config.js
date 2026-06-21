@@ -14,6 +14,15 @@ const nextConfig = {
     APP_NAME: 'GEO优化助手Pro',
     APP_DOMAIN: process.env.APP_DOMAIN || 'http://localhost:3000',
   },
+  // API代理到后端
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:3001/api/:path*',
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

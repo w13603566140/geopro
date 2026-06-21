@@ -76,6 +76,10 @@ router.get('/balance', async (req: any, res) => {
       } 
     });
   } catch (error) {
+    // DEMO_MODE降级
+    if (process.env.DEMO_MODE === 'true') {
+      return res.json({ success: true, data: { credits: 286 } });
+    }
     console.error('获取积分余额失败:', error);
     res.status(500).json({ success: false, error: '服务器错误' });
   }
@@ -109,24 +113,32 @@ router.post('/recharge', async (req: any, res) => {
       return res.status(400).json({ success: false, error: '无效的积分套餐' });
     }
 
-    // 计算总积分（包含赠送）
     const totalCredits = pkg.credits + (pkg.bonus || 0);
 
-    // 创建订单记录
-    const order = await prisma.creditOrder.create({
+    // DEMO_MODE下模拟充值成功
+    if (process.env.DEMO_MODE === 'true') {
+      const mockOrderId = 'demo-order-' + Date.now();
+      return res.json({ 
+        success: true, 
+        data: {
+          orderId: mockOrderId,
+          paymentUrl: `https://mock-payment.com/pay?orderId=${mockOrderId}&amount=${pkg.price}`,
+          credits: totalCredits,
+          amount: pkg.price
+        }
+      });
+    }
+
+    const order = await prisma.creditTransaction.create({
       data: {
         userId,
-        packageId,
-        packageName: pkg.name,
-        credits: totalCredits,
-        amount: pkg.price,
-        paymentMethod,
-        status: 'pending',
+        type: 'CHARGE',
+        amount: totalCredits,
+        balance: totalCredits,
+        description: `充值${pkg.name} - ${paymentMethod || '在线支付'}`,
       }
     });
 
-    // 实际应用中这里应该调用支付宝/微信支付接口
-    // 返回支付链接或二维码
     const mockPaymentUrl = `https://mock-payment.com/pay?orderId=${order.id}&amount=${pkg.price}`;
 
     res.json({ 
@@ -152,17 +164,21 @@ router.post('/consume', async (req: any, res) => {
     const userId = req.userId;
     const { type, site, credits: customCredits } = req.body;
 
-    // 从数据库获取积分消耗配置
     const creditCosts = await getCreditCostsFromDB();
-    
-    // 获取消耗量（如果自定义则使用自定义值，否则使用配置值）
     const credits = customCredits || creditCosts[type];
     
     if (!credits) {
       return res.status(400).json({ success: false, error: '无效的功能类型' });
     }
 
-    // 检查用户积分是否足够
+    // DEMO_MODE下直接返回成功
+    if (process.env.DEMO_MODE === 'true') {
+      return res.json({ 
+        success: true, 
+        data: { consumedCredits: credits, remainingCredits: 286 - credits }
+      });
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { credits: true }
@@ -177,19 +193,18 @@ router.post('/consume', async (req: any, res) => {
       });
     }
 
-    // 扣除积分
     await prisma.user.update({
       where: { id: userId },
       data: { credits: { decrement: credits } }
     });
 
-    // 记录消费日志
-    await prisma.creditLog.create({
+    await prisma.creditTransaction.create({
       data: {
         userId,
-        type,
-        credits: -credits,
-        site: site || '',
+        type: 'CONSUME',
+        amount: -credits,
+        balance: user.credits - credits,
+        description: site || type,
       }
     });
 
@@ -222,13 +237,13 @@ router.get('/history', async (req: any, res) => {
     const skip = (Number(page) - 1) * Number(pageSize);
 
     const [logs, total] = await Promise.all([
-      prisma.creditLog.findMany({
+      prisma.creditTransaction.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
         skip,
         take: Number(pageSize),
       }),
-      prisma.creditLog.count({ where: { userId } })
+      prisma.creditTransaction.count({ where: { userId } })
     ]);
 
     res.json({ 
@@ -242,6 +257,23 @@ router.get('/history', async (req: any, res) => {
       }
     });
   } catch (error) {
+    // DEMO_MODE降级
+    if (process.env.DEMO_MODE === 'true') {
+      return res.json({
+        success: true,
+        data: {
+          logs: [
+            { id: '1', description: 'GEO诊断消耗', amount: -10, type: 'CONSUME', createdAt: new Date().toISOString() },
+            { id: '2', description: '充值标准包', amount: 500, type: 'CHARGE', createdAt: new Date(Date.now()-86400000).toISOString() },
+            { id: '3', description: 'AI内容生成消耗', amount: -5, type: 'CONSUME', createdAt: new Date(Date.now()-172800000).toISOString() },
+          ],
+          total: 3,
+          page: 1,
+          pageSize: 20,
+          totalPages: 1,
+        }
+      });
+    }
     console.error('获取积分记录失败:', error);
     res.status(500).json({ success: false, error: '服务器错误' });
   }

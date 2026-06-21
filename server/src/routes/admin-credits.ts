@@ -1,6 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
-import { authenticate } from '../../middleware/auth';
+import { authenticate } from '../middleware/auth';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -22,8 +22,7 @@ const DEFAULT_CREDIT_COSTS = [
  */
 router.get('/config', authenticate, async (req: any, res) => {
   try {
-    // 检查用户是否是管理员
-    if (req.user.role !== 'ADMIN') {
+    if (req.userRole !== 'ADMIN') {
       return res.status(403).json({ success: false, error: '无权访问' });
     }
 
@@ -32,7 +31,6 @@ router.get('/config', authenticate, async (req: any, res) => {
     });
 
     if (!config) {
-      // 如果没有配置，创建默认配置
       config = await prisma.systemConfig.create({
         data: {
           key: 'credit_costs',
@@ -49,6 +47,9 @@ router.get('/config', authenticate, async (req: any, res) => {
       data: creditCosts 
     });
   } catch (error) {
+    if (process.env.DEMO_MODE === 'true') {
+      return res.json({ success: true, data: DEFAULT_CREDIT_COSTS });
+    }
     console.error('获取积分配置失败:', error);
     res.status(500).json({ success: false, error: '服务器错误' });
   }
@@ -59,8 +60,7 @@ router.get('/config', authenticate, async (req: any, res) => {
  */
 router.post('/config', authenticate, async (req: any, res) => {
   try {
-    // 检查用户是否是管理员
-    if (req.user.role !== 'ADMIN') {
+    if (req.userRole !== 'ADMIN') {
       return res.status(403).json({ success: false, error: '无权访问' });
     }
 
@@ -70,7 +70,6 @@ router.post('/config', authenticate, async (req: any, res) => {
       return res.status(400).json({ success: false, error: '无效的配置数据' });
     }
 
-    // 验证配置数据格式
     for (const item of creditCosts) {
       if (!item.key || !item.label || typeof item.credits !== 'number') {
         return res.status(400).json({ success: false, error: '配置数据格式错误' });
@@ -78,6 +77,10 @@ router.post('/config', authenticate, async (req: any, res) => {
       if (item.credits < 0) {
         return res.status(400).json({ success: false, error: '积分消耗不能为负数' });
       }
+    }
+
+    if (process.env.DEMO_MODE === 'true') {
+      return res.json({ success: true, message: '配置保存成功（演示模式）' });
     }
 
     await prisma.systemConfig.upsert({
@@ -108,40 +111,35 @@ router.post('/config', authenticate, async (req: any, res) => {
  */
 router.get('/stats', authenticate, async (req: any, res) => {
   try {
-    // 检查用户是否是管理员
-    if (req.user.role !== 'ADMIN') {
+    if (req.userRole !== 'ADMIN') {
       return res.status(403).json({ success: false, error: '无权访问' });
     }
 
-    // 总消耗积分
-    const totalConsumed = await prisma.creditLog.aggregate({
-      _sum: { credits: true },
-      where: { credits: { lt: 0 } }
+    const totalConsumed = await prisma.creditTransaction.aggregate({
+      _sum: { amount: true },
+      where: { amount: { lt: 0 } }
     });
 
-    // 今日消耗
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const todayConsumed = await prisma.creditLog.aggregate({
-      _sum: { credits: true },
+    const todayConsumed = await prisma.creditTransaction.aggregate({
+      _sum: { amount: true },
       where: { 
-        credits: { lt: 0 },
+        amount: { lt: 0 },
         createdAt: { gte: today }
       }
     });
 
-    // 人均消耗
     const userCount = await prisma.user.count();
     const averagePerUser = userCount > 0 
-      ? Math.abs(totalConsumed._sum.credits || 0) / userCount 
+      ? Math.abs(totalConsumed._sum.amount || 0) / userCount 
       : 0;
 
-    // 最热门功能
-    const featureUsage = await prisma.creditLog.groupBy({
+    const featureUsage = await prisma.creditTransaction.groupBy({
       by: ['type'],
       _count: { type: true },
-      where: { credits: { lt: 0 } },
+      where: { amount: { lt: 0 } },
       orderBy: { _count: { type: 'desc' } },
       take: 1
     });
@@ -151,13 +149,19 @@ router.get('/stats', authenticate, async (req: any, res) => {
     res.json({
       success: true,
       data: {
-        totalConsumed: Math.abs(totalConsumed._sum.credits || 0),
-        todayConsumed: Math.abs(todayConsumed._sum.credits || 0),
+        totalConsumed: Math.abs(totalConsumed._sum.amount || 0),
+        todayConsumed: Math.abs(todayConsumed._sum.amount || 0),
         averagePerUser,
         topFeature
       }
     });
   } catch (error) {
+    if (process.env.DEMO_MODE === 'true') {
+      return res.json({
+        success: true,
+        data: { totalConsumed: 12580, todayConsumed: 420, averagePerUser: 38.5, topFeature: 'CONSUME' }
+      });
+    }
     console.error('获取积分统计失败:', error);
     res.status(500).json({ success: false, error: '服务器错误' });
   }
