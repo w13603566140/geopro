@@ -66,7 +66,7 @@ monitoringRouter.post('/check', async (req: AuthRequest, res: Response) => {
   const mentions = results.filter(r => r.brandMentioned).length;
 
   const competitorMap = new Map<string, number>();
-  results.forEach(r => r.competitors.forEach(c => competitorMap.set(c, (competitorMap.get(c) || 0) + 1)));
+  results.forEach(r => r.competitors.forEach((c: string) => competitorMap.set(c, (competitorMap.get(c) || 0) + 1)));
 
   res.json({
     success: true,

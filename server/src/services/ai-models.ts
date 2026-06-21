@@ -223,7 +223,7 @@ function extractCompetitors(text: string, brandName: string): string[] {
 }
 
 /** 模拟查询 (当无API密钥时使用) */
-function simulateQuery(
+async function simulateQuery(
   modelConfig: AIModelConfig,
   brandName: string,
   industryWords: string[],
